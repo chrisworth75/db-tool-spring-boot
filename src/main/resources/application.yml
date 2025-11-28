@@ -1,8 +1,6 @@
 spring:
   application:
     name: db-tool-spring-boot
-  main:
-    web-application-type: none
 
   # Payment Database Configuration
   datasource:

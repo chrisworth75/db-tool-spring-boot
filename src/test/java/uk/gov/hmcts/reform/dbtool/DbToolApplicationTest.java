@@ -8,15 +8,14 @@ class DbToolApplicationTest {
 
     @Test
     void testMainMethod() {
-        // Just verify the class can be instantiated and main exists
-        assertDoesNotThrow(() -> new DbToolApplication(null, null));
+        // Just verify the class can be instantiated
+        assertDoesNotThrow(() -> new DbToolApplication());
     }
 
     @Test
-    void testApplicationContext() {
+    void testApplicationClass() {
         // Verify the application class structure
         assertNotNull(DbToolApplication.class);
         assertDoesNotThrow(() -> DbToolApplication.class.getDeclaredMethod("main", String[].class));
-        assertDoesNotThrow(() -> DbToolApplication.class.getDeclaredMethod("commandLineRunner"));
     }
 }

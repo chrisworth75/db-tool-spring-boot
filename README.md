@@ -1,5 +1,7 @@
 # DB Tool - Spring Boot
 
+> **Note:** This Spring Boot implementation is now the primary version of the DB Tool. The Node.js (`../db-tool`) and Python (`../db-tool-python`) versions may be behind and are not actively maintained. If you need the latest features and improvements, use this version.
+
 A Spring Boot REST API for querying and merging payment and refund data from two PostgreSQL databases.
 
 ## Architecture
@@ -7,24 +9,31 @@ A Spring Boot REST API for querying and merging payment and refund data from two
 This application implements a **two-model architecture**:
 
 1. **Clean Domain Model** (`uk.gov.hmcts.reform.dbtool.domain`)
+   - Immutable Java records for type safety and clarity
    - Business-focused DTOs with no database-specific fields
    - Optimized for API responses and business logic
-   - Classes: `Case`, `ServiceRequest`, `Fee`, `Payment`, `Refund`, `Remission`
+   - Records: `Fee`, `Payment`, `Refund`, `Remission`, `Apportionment`, `ServiceRequest`, `CaseSummary`
+   - Class: `Case` (has business logic methods)
 
 2. **Database Model** (`uk.gov.hmcts.reform.dbtool.database`)
-   - JPA entities that exactly match database tables
-   - Include validation annotations (@NotNull, @Size, @Positive, etc.)
+   - JPA entities suffixed with `Entity` (e.g., `FeeEntity`, `PaymentEntity`)
+   - Exactly match database table structures
    - Used only for persistence layer
+
+3. **Immutable Mapping** (`uk.gov.hmcts.reform.dbtool.mapper`)
+   - `CaseMapper` builds domain objects bottom-up
+   - Child collections are built first, then parent records constructed with completed lists
+   - No mutation after construction
 
 ## Features
 
-- ✅ Query case data by CCD case number
-- ✅ Query case data by payment reference
-- ✅ Merge data from two databases (payments and refunds)
-- ✅ Calculate case summaries (totals, balances, counts)
-- ✅ Clean separation between domain and database models
-- ✅ Dual database support with separate transaction managers
-- ✅ RESTful API with JSON responses
+- Query case data by CCD case number
+- Merge data from two databases (payments and refunds)
+- Calculate case summaries (totals, balances, counts)
+- Clean separation between domain and database models
+- Dual database support with separate entity managers
+- RESTful API with JSON responses
+- Immutable domain model using Java records
 
 ## Prerequisites
 
@@ -38,26 +47,26 @@ This application implements a **two-model architecture**:
 
 The application expects two PostgreSQL databases:
 
-```bash
+```
 # Payment Database
 Host: localhost
 Port: 5446
-Database: payment
-Username: payment
-Password: payment
+Database: payments
+Username: postgres
+Password: postgres
 
 # Refunds Database
 Host: localhost
 Port: 5447
 Database: refunds
-Username: refunds
-Password: refunds
+Username: postgres
+Password: postgres
 ```
 
 ## Building
 
 ```bash
-mvn clean install
+mvn clean package
 ```
 
 ## Running
@@ -66,13 +75,19 @@ mvn clean install
 mvn spring-boot:run
 ```
 
+Or run the JAR directly:
+
+```bash
+java -jar target/db-tool-spring-boot-0.0.1-SNAPSHOT.jar
+```
+
 The application will start on `http://localhost:8080`
 
 ## API Endpoints
 
 ### Get Case by CCD Number
 
-```bash
+```
 GET /api/cases/ccd/{ccdCaseNumber}
 ```
 
@@ -88,41 +103,32 @@ Response:
     "ccdCaseNumber": "1111111111111111",
     "serviceRequests": [
       {
-        "paymentReference": "RC-1234-5678-9012-3456",
+        "id": 1,
+        "paymentReference": "PAY-1111",
         "fees": [...],
         "payments": [...]
       }
     ]
   },
   "summary": {
-    "totalFees": 200.00,
-    "totalPayments": 150.00,
-    "totalRefunds": 0.00,
-    "totalRemissions": 50.00,
-    "amountDue": 0.00,
-    "netAmount": 200.00,
+    "totalFees": 630,
+    "totalPayments": 630,
+    "totalRefunds": 0,
+    "totalRemissions": 0,
+    "amountDue": 0,
+    "netAmount": 630,
     "serviceRequestCount": 1,
-    "feeCount": 2,
-    "paymentCount": 1,
-    "refundCount": 0
+    "feeCount": 3,
+    "paymentCount": 3,
+    "refundCount": 0,
+    "remissionCount": 0
   }
 }
 ```
 
-### Get Case by Payment Reference
-
-```bash
-GET /api/cases/payment-reference/{paymentReference}
-```
-
-Example:
-```bash
-curl http://localhost:8080/api/cases/payment-reference/RC-1234-5678-9012-3456
-```
-
 ### Get Case Summary Only
 
-```bash
+```
 GET /api/cases/ccd/{ccdCaseNumber}/summary
 ```
 
@@ -141,21 +147,21 @@ src/main/java/uk/gov/hmcts/reform/dbtool/
 ├── controller/          # REST API controllers
 │   └── CaseController.java
 ├── database/            # JPA entities (database model)
-│   ├── PaymentFeeLink.java
-│   ├── Fee.java
-│   ├── Payment.java
-│   ├── Refund.java
-│   ├── Remission.java
-│   └── Apportionment.java
-├── domain/              # Clean domain DTOs
-│   ├── Case.java
-│   ├── ServiceRequest.java
-│   ├── Fee.java
-│   ├── Payment.java
-│   ├── Refund.java
-│   ├── Remission.java
-│   ├── CaseSummary.java
-│   └── ServiceRequestSummary.java
+│   ├── PaymentFeeLinkEntity.java
+│   ├── FeeEntity.java
+│   ├── PaymentEntity.java
+│   ├── RefundEntity.java
+│   ├── RemissionEntity.java
+│   └── ApportionmentEntity.java
+├── domain/              # Immutable domain records
+│   ├── Case.java           # Class with getSummary() method
+│   ├── ServiceRequest.java # Record
+│   ├── Fee.java            # Record
+│   ├── Payment.java        # Record
+│   ├── Refund.java         # Record
+│   ├── Remission.java      # Record
+│   ├── Apportionment.java  # Record
+│   └── CaseSummary.java    # Record with @Builder
 ├── mapper/              # Maps between database and domain models
 │   └── CaseMapper.java
 ├── repository/          # JPA repositories
@@ -168,6 +174,16 @@ src/main/java/uk/gov/hmcts/reform/dbtool/
 ├── service/             # Business logic
 │   └── CaseQueryService.java
 └── DbToolApplication.java
+
+src/test/java/uk/gov/hmcts/reform/dbtool/
+├── domain/
+│   ├── CaseTest.java
+│   └── DomainModelTest.java
+├── mapper/
+│   └── CaseMapperTest.java
+├── service/
+│   └── CaseQueryServiceTest.java
+└── DbToolApplicationTest.java
 ```
 
 ## Configuration
@@ -182,34 +198,16 @@ Edit `src/main/resources/application.yml` to configure:
 - **Spring Boot 3.2.0** - Application framework
 - **Spring Data JPA** - Database access
 - **PostgreSQL** - Database
-- **Hibernate** - ORM
-- **Lombok** - Reduces boilerplate code
-- **Jakarta Validation** - Bean validation
-- **SLF4J + Logback** - Logging
+- **Hibernate 6** - ORM
+- **Lombok** - Reduces boilerplate code (@Builder for CaseSummary)
+- **Java Records** - Immutable domain model
+- **JUnit 5** - Testing
 
-## Future Enhancements
+## Running Tests
 
-- [ ] Add integration tests
-- [ ] Add POST endpoints for creating cases
-- [ ] Add bidirectional mapping (domain → database)
-- [ ] Add comprehensive validation before persistence
-- [ ] Add Swagger/OpenAPI documentation
-- [ ] Add health check endpoints
-- [ ] Add metrics and monitoring
-
-## Comparison with Node.js Version
-
-This Spring Boot version mirrors the Node.js implementation in `../db-tool`:
-
-| Feature | Node.js | Spring Boot |
-|---------|---------|-------------|
-| Clean Domain Model | ✅ | ✅ |
-| Database Model | ✅ | ✅ |
-| Validation | Custom validators | Jakarta Validation |
-| Database Access | pg library | Spring Data JPA |
-| API | CLI tool | REST API |
-| Mapping | Manual functions | Service layer |
-| Tests | Jest | (TBD) |
+```bash
+mvn test
+```
 
 ## License
 
