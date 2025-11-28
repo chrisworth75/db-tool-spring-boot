@@ -13,10 +13,10 @@ import java.time.LocalDateTime;
  * DATABASE MODEL - refunds table
  */
 @Entity
-@Table(name = "refunds", schema = "refunds")
+@Table(name = "refunds", schema = "public")
 @Data
 @NoArgsConstructor
-public class Refund {
+public class RefundEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -28,8 +28,7 @@ public class Refund {
     @Column(name = "date_updated")
     private LocalDateTime dateUpdated;
 
-    @Positive
-    @Column(name = "amount", precision = 12, scale = 2)
+    @Column(name = "amount", precision = 19, scale = 2)
     private BigDecimal amount;
 
     @Column(name = "reason")
@@ -38,12 +37,10 @@ public class Refund {
     @Column(name = "refund_status")
     private String refundStatus;
 
-    @Size(max = 255)
-    @Column(name = "reference", length = 255)
+    @Column(name = "reference")
     private String reference;
 
-    @Size(max = 255)
-    @Column(name = "payment_reference", length = 255)
+    @Column(name = "payment_reference")
     private String paymentReference;
 
     @Column(name = "created_by")
@@ -52,8 +49,7 @@ public class Refund {
     @Column(name = "updated_by")
     private String updatedBy;
 
-    @Size(max = 255)
-    @Column(name = "ccd_case_number", length = 255)
+    @Column(name = "ccd_case_number")
     private String ccdCaseNumber;
 
     @Column(name = "fee_ids")

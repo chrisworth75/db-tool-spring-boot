@@ -14,34 +14,38 @@ import java.time.LocalDateTime;
  * DATABASE MODEL - remission table
  */
 @Entity
-@Table(name = "remission", schema = "payment")
+@Table(name = "remission", schema = "public")
 @Data
 @NoArgsConstructor
-public class Remission {
+public class RemissionEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @NotNull
     @Column(name = "fee_id")
     private Long feeId;
 
-    @Size(max = 50)
-    @Column(name = "hwf_reference", length = 50)
+    @Column(name = "hwf_reference")
     private String hwfReference;
 
-    @NotNull
-    @Positive
-    @Column(name = "hwf_amount", precision = 12, scale = 2)
+    @Column(name = "hwf_amount", precision = 19, scale = 2)
     private BigDecimal hwfAmount;
 
     @Column(name = "beneficiary_name")
     private String beneficiaryName;
 
-    @Size(max = 25)
-    @Column(name = "ccd_case_number", length = 25)
+    @Column(name = "ccd_case_number")
     private String ccdCaseNumber;
+
+    @Column(name = "case_reference")
+    private String caseReference;
+
+    @Column(name = "payment_link_id")
+    private Long paymentLinkId;
+
+    @Column(name = "site_id")
+    private String siteId;
 
     @Column(name = "date_created")
     private LocalDateTime dateCreated;
@@ -49,6 +53,6 @@ public class Remission {
     @Column(name = "date_updated")
     private LocalDateTime dateUpdated;
 
-    @Column(name = "remission_reference", length = 50)
+    @Column(name = "remission_reference")
     private String remissionReference;
 }

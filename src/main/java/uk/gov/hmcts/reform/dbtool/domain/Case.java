@@ -27,23 +27,40 @@ public class Case {
     }
 
     public CaseSummary getSummary() {
-        double totalFees = 0;
-        double totalPayments = 0;
-        double totalRefunds = 0;
-        double totalRemissions = 0;
+        int totalFees = 0;
+        int totalPayments = 0;
+        int totalRefunds = 0;
+        int totalRemissions = 0;
         int feeCount = 0;
         int paymentCount = 0;
         int refundCount = 0;
+        int remissionCount = 0;
 
         for (ServiceRequest sr : serviceRequests) {
-            ServiceRequestSummary srSummary = sr.getSummary();
-            totalFees += srSummary.getTotalFees();
-            totalPayments += srSummary.getTotalPayments();
-            totalRefunds += srSummary.getTotalRefunds();
-            totalRemissions += srSummary.getTotalRemissions();
-            feeCount += srSummary.getFeeCount();
-            paymentCount += srSummary.getPaymentCount();
-            refundCount += srSummary.getRefundCount();
+            for (Fee fee : sr.fees()) {
+                if (fee.amount() != null) {
+                    totalFees += parseAmount(fee.amount());
+                }
+                feeCount++;
+                remissionCount += fee.remissions().size();
+                for (Remission rem : fee.remissions()) {
+                    if (rem.amount() != null) {
+                        totalRemissions += rem.amount().intValue();
+                    }
+                }
+            }
+            for (Payment payment : sr.payments()) {
+                if (payment.amount() != null) {
+                    totalPayments += parseAmount(payment.amount());
+                }
+                paymentCount++;
+                for (Refund refund : payment.refunds()) {
+                    if (refund.amount() != null) {
+                        totalRefunds += refund.amount().intValue();
+                    }
+                    refundCount++;
+                }
+            }
         }
 
         return CaseSummary.builder()
@@ -55,8 +72,17 @@ public class Case {
                 .feeCount(feeCount)
                 .paymentCount(paymentCount)
                 .refundCount(refundCount)
+                .remissionCount(remissionCount)
                 .netAmount(totalPayments + totalRemissions - totalRefunds)
                 .amountDue(totalFees - totalPayments - totalRemissions)
                 .build();
+    }
+
+    private int parseAmount(String amount) {
+        try {
+            return (int) Double.parseDouble(amount);
+        } catch (Exception e) {
+            return 0;
+        }
     }
 }

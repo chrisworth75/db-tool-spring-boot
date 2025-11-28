@@ -15,10 +15,10 @@ import java.time.LocalDateTime;
  * Exact match to database structure with validation
  */
 @Entity
-@Table(name = "payment_fee_link", schema = "payment")
+@Table(name = "payment_fee_link", schema = "public")
 @Data
 @NoArgsConstructor
-public class PaymentFeeLink {
+public class PaymentFeeLinkEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -56,8 +56,4 @@ public class PaymentFeeLink {
 
     @Column(name = "service_request_callback_url")
     private String serviceRequestCallbackUrl;
-
-    @PositiveOrZero
-    @Column(name = "amount_due", precision = 12, scale = 2)
-    private BigDecimal amountDue;
 }

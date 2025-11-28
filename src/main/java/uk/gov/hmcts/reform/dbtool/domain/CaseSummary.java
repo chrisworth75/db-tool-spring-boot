@@ -1,19 +1,18 @@
 package uk.gov.hmcts.reform.dbtool.domain;
 
 import lombok.Builder;
-import lombok.Data;
 
-@Data
 @Builder
-public class CaseSummary {
-    private double totalFees;
-    private double totalPayments;
-    private double totalRefunds;
-    private double totalRemissions;
-    private int serviceRequestCount;
-    private int feeCount;
-    private int paymentCount;
-    private int refundCount;
-    private double netAmount;
-    private double amountDue;
-}
+public record CaseSummary(
+    int totalFees,
+    int totalPayments,
+    int totalRefunds,
+    int totalRemissions,
+    int serviceRequestCount,
+    int feeCount,
+    int paymentCount,
+    int refundCount,
+    int remissionCount,
+    int netAmount,
+    int amountDue
+) {}

@@ -18,155 +18,193 @@ public class CaseMapper {
      * Map database entities to domain Case(s)
      */
     public List<Case> mapToDomain(
-            List<PaymentFeeLink> links,
-            List<Fee> fees,
-            List<Payment> payments,
-            List<Refund> refunds,
-            List<Remission> remissions,
-            List<Apportionment> apportionments) {
+            List<PaymentFeeLinkEntity> links,
+            List<FeeEntity> fees,
+            List<PaymentEntity> payments,
+            List<RefundEntity> refunds,
+            List<RemissionEntity> remissions,
+            List<ApportionmentEntity> apportionments) {
 
-        // Group by CCD case number
-        Map<String, Case> caseMap = new HashMap<>();
+        // Index entities for efficient lookups
+        Map<Long, List<FeeEntity>> feesByLinkId = fees.stream()
+                .filter(f -> f.getPaymentLinkId() != null)
+                .collect(Collectors.groupingBy(FeeEntity::getPaymentLinkId));
 
-        // Process payment_fee_links
-        for (PaymentFeeLink link : links) {
-            String ccd = link.getCcdCaseNumber();
+        Map<Long, List<PaymentEntity>> paymentsByLinkId = payments.stream()
+                .filter(p -> p.getPaymentLinkId() != null)
+                .collect(Collectors.groupingBy(PaymentEntity::getPaymentLinkId));
 
-            caseMap.putIfAbsent(ccd, new Case(ccd));
-            Case domainCase = caseMap.get(ccd);
+        Map<Long, List<RemissionEntity>> remissionsByFeeId = remissions.stream()
+                .filter(r -> r.getFeeId() != null)
+                .collect(Collectors.groupingBy(RemissionEntity::getFeeId));
 
-            ServiceRequest sr = new ServiceRequest(link.getPaymentReference(), ccd);
-            sr.setCaseReference(link.getCaseReference());
-            sr.setOrgId(link.getOrgId());
-            sr.setServiceName(link.getEnterpriseServiceName());
-            sr.setCreatedAt(link.getDateCreated());
-            sr.setUpdatedAt(link.getDateUpdated());
+        Map<String, List<RefundEntity>> refundsByPaymentRef = refunds.stream()
+                .filter(r -> r.getPaymentReference() != null)
+                .collect(Collectors.groupingBy(RefundEntity::getPaymentReference));
 
-            domainCase.addServiceRequest(sr);
+        Map<Long, List<ApportionmentEntity>> apportionmentsByPaymentId = apportionments.stream()
+                .filter(a -> a.getPaymentId() != null)
+                .collect(Collectors.groupingBy(ApportionmentEntity::getPaymentId));
+
+        // Group links by CCD case number
+        Map<String, List<PaymentFeeLinkEntity>> linksByCcd = links.stream()
+                .filter(l -> l.getCcdCaseNumber() != null)
+                .collect(Collectors.groupingBy(PaymentFeeLinkEntity::getCcdCaseNumber));
+
+        // Build cases
+        List<Case> result = new ArrayList<>();
+
+        for (Map.Entry<String, List<PaymentFeeLinkEntity>> entry : linksByCcd.entrySet()) {
+            String ccd = entry.getKey();
+            List<PaymentFeeLinkEntity> caseLinks = entry.getValue();
+
+            List<ServiceRequest> serviceRequests = caseLinks.stream()
+                    .map(link -> buildServiceRequest(
+                            link,
+                            feesByLinkId.getOrDefault(link.getId(), List.of()),
+                            paymentsByLinkId.getOrDefault(link.getId(), List.of()),
+                            remissionsByFeeId,
+                            refundsByPaymentRef,
+                            apportionmentsByPaymentId))
+                    .toList();
+
+            Case domainCase = new Case(ccd);
+            serviceRequests.forEach(domainCase::addServiceRequest);
+            result.add(domainCase);
         }
 
-        // Add fees to service requests
-        for (Fee dbFee : fees) {
-            Case domainCase = caseMap.get(dbFee.getCcdCaseNumber());
-            if (domainCase == null) continue;
-
-            ServiceRequest sr = findServiceRequestByLinkId(domainCase, dbFee.getPaymentLinkId(), links);
-            if (sr == null) continue;
-
-            uk.gov.hmcts.reform.dbtool.domain.Fee fee = new uk.gov.hmcts.reform.dbtool.domain.Fee(
-                    dbFee.getCode(),
-                    dbFee.getVersion(),
-                    dbFee.getFeeAmount() != null ? dbFee.getFeeAmount().doubleValue() : null
-            );
-            fee.setVolume(dbFee.getVolume());
-            fee.setReference(dbFee.getReference());
-            fee.setCreatedAt(dbFee.getDateCreated());
-            fee.setUpdatedAt(dbFee.getDateUpdated());
-
-            sr.addFee(fee);
-
-            // Add remissions for this fee
-            List<Remission> feeRemissions = remissions.stream()
-                    .filter(r -> r.getFeeId().equals(dbFee.getId()))
-                    .collect(Collectors.toList());
-
-            for (Remission dbRemission : feeRemissions) {
-                uk.gov.hmcts.reform.dbtool.domain.Remission remission =
-                        new uk.gov.hmcts.reform.dbtool.domain.Remission(
-                                dbRemission.getHwfReference(),
-                                dbRemission.getHwfAmount() != null ? dbRemission.getHwfAmount().doubleValue() : null
-                        );
-                remission.setBeneficiaryName(dbRemission.getBeneficiaryName());
-                remission.setCreatedAt(dbRemission.getDateCreated());
-                remission.setUpdatedAt(dbRemission.getDateUpdated());
-
-                fee.addRemission(remission);
-            }
-        }
-
-        // Add payments to service requests
-        for (Payment dbPayment : payments) {
-            Case domainCase = caseMap.get(dbPayment.getCcdCaseNumber());
-            if (domainCase == null) continue;
-
-            ServiceRequest sr = findServiceRequestByLinkId(domainCase, dbPayment.getPaymentLinkId(), links);
-            if (sr == null) continue;
-
-            uk.gov.hmcts.reform.dbtool.domain.Payment payment =
-                    new uk.gov.hmcts.reform.dbtool.domain.Payment(
-                            dbPayment.getReference(),
-                            dbPayment.getAmount() != null ? dbPayment.getAmount().doubleValue() : null
-                    );
-            payment.setCurrency(dbPayment.getCurrency());
-            payment.setStatus(dbPayment.getPaymentStatus());
-            payment.setMethod(dbPayment.getPaymentMethod());
-            payment.setProvider(dbPayment.getPaymentProvider());
-            payment.setChannel(dbPayment.getPaymentChannel());
-            payment.setCustomerReference(dbPayment.getCustomerReference());
-            payment.setPbaNumber(dbPayment.getPbaNumber());
-            payment.setPayerName(dbPayment.getPayerName());
-            payment.setCreatedAt(dbPayment.getDateCreated());
-            payment.setUpdatedAt(dbPayment.getDateUpdated());
-            payment.setBankedAt(dbPayment.getBankedDate());
-
-            // Add fee allocations (apportionments) for this payment
-            List<Apportionment> paymentApportionments = apportionments.stream()
-                    .filter(a -> a.getPaymentId().equals(dbPayment.getId()))
-                    .collect(Collectors.toList());
-
-            for (Apportionment dbApportionment : paymentApportionments) {
-                // Find the fee by id to get the fee code
-                Optional<Fee> matchingFee = fees.stream()
-                        .filter(f -> f.getId().equals(dbApportionment.getFeeId()))
-                        .findFirst();
-
-                matchingFee.ifPresent(fee -> payment.addFeeAllocation(
-                        fee.getCode(),
-                        dbApportionment.getApportionAmount() != null ?
-                                dbApportionment.getApportionAmount().doubleValue() : null
-                ));
-            }
-
-            sr.addPayment(payment);
-
-            // Add refunds for this payment
-            List<Refund> paymentRefunds = refunds.stream()
-                    .filter(r -> dbPayment.getReference().equals(r.getPaymentReference()))
-                    .collect(Collectors.toList());
-
-            for (Refund dbRefund : paymentRefunds) {
-                uk.gov.hmcts.reform.dbtool.domain.Refund refund =
-                        new uk.gov.hmcts.reform.dbtool.domain.Refund(
-                                dbRefund.getReference(),
-                                dbRefund.getAmount() != null ? dbRefund.getAmount().doubleValue() : null,
-                                dbRefund.getReason()
-                        );
-                refund.setStatus(dbRefund.getRefundStatus());
-                refund.setInstructionType(dbRefund.getRefundInstructionType());
-                refund.setCreatedAt(dbRefund.getDateCreated());
-                refund.setUpdatedAt(dbRefund.getDateUpdated());
-                refund.setCreatedBy(dbRefund.getCreatedBy());
-                refund.setUpdatedBy(dbRefund.getUpdatedBy());
-
-                payment.addRefund(refund);
-            }
-        }
-
-        return new ArrayList<>(caseMap.values());
+        return result;
     }
 
-    private ServiceRequest findServiceRequestByLinkId(
-            Case domainCase, Long linkId, List<PaymentFeeLink> links) {
+    private ServiceRequest buildServiceRequest(
+            PaymentFeeLinkEntity link,
+            List<FeeEntity> linkFees,
+            List<PaymentEntity> linkPayments,
+            Map<Long, List<RemissionEntity>> remissionsByFeeId,
+            Map<String, List<RefundEntity>> refundsByPaymentRef,
+            Map<Long, List<ApportionmentEntity>> apportionmentsByPaymentId) {
 
-        Optional<PaymentFeeLink> link = links.stream()
-                .filter(l -> l.getId().equals(linkId))
-                .findFirst();
+        // Build fees with their remissions
+        List<Fee> fees = linkFees.stream()
+                .map(dbFee -> buildFee(dbFee, remissionsByFeeId.getOrDefault(dbFee.getId(), List.of())))
+                .toList();
 
-        if (link.isEmpty()) return null;
+        // Build payments with their refunds and apportionments
+        List<Payment> payments = linkPayments.stream()
+                .map(dbPayment -> buildPayment(
+                        dbPayment,
+                        refundsByPaymentRef.getOrDefault(dbPayment.getReference(), List.of()),
+                        apportionmentsByPaymentId.getOrDefault(dbPayment.getId(), List.of())))
+                .toList();
 
-        return domainCase.getServiceRequests().stream()
-                .filter(sr -> sr.getPaymentReference().equals(link.get().getPaymentReference()))
-                .findFirst()
-                .orElse(null);
+        return new ServiceRequest(
+                link.getId(),
+                link.getPaymentReference(),
+                link.getCcdCaseNumber(),
+                link.getCaseReference(),
+                fees,
+                payments,
+                link.getDateCreated(),
+                link.getDateUpdated(),
+                link.getOrgId(),
+                link.getEnterpriseServiceName(),
+                link.getServiceRequestCallbackUrl()
+        );
+    }
+
+    private Fee buildFee(FeeEntity dbFee, List<RemissionEntity> feeRemissions) {
+        List<Remission> remissions = feeRemissions.stream()
+                .map(this::buildRemission)
+                .toList();
+
+        return new Fee(
+                dbFee.getId(),
+                dbFee.getCode(),
+                dbFee.getVersion(),
+                formatAmount(dbFee.getFeeAmount()),
+                formatAmount(dbFee.getCalculatedAmount()),
+                formatAmount(dbFee.getNetAmount()),
+                formatAmount(dbFee.getAmountDue()),
+                dbFee.getVolume(),
+                dbFee.getReference(),
+                remissions,
+                dbFee.getDateCreated(),
+                dbFee.getDateUpdated()
+        );
+    }
+
+    private Remission buildRemission(RemissionEntity dbRemission) {
+        return new Remission(
+                dbRemission.getHwfReference(),
+                dbRemission.getHwfAmount() != null ? dbRemission.getHwfAmount().doubleValue() : null,
+                dbRemission.getBeneficiaryName(),
+                dbRemission.getDateCreated(),
+                dbRemission.getDateUpdated()
+        );
+    }
+
+    private Payment buildPayment(
+            PaymentEntity dbPayment,
+            List<RefundEntity> paymentRefunds,
+            List<ApportionmentEntity> paymentApportionments) {
+
+        List<Refund> refunds = paymentRefunds.stream()
+                .map(this::buildRefund)
+                .toList();
+
+        List<Apportionment> apportionments = paymentApportionments.stream()
+                .map(this::buildApportionment)
+                .toList();
+
+        return new Payment(
+                dbPayment.getId(),
+                dbPayment.getReference(),
+                formatAmount(dbPayment.getAmount()),
+                dbPayment.getCurrency(),
+                dbPayment.getPaymentStatus(),
+                dbPayment.getPaymentMethod(),
+                dbPayment.getPaymentProvider(),
+                dbPayment.getPaymentChannel(),
+                dbPayment.getExternalReference(),
+                dbPayment.getCustomerReference(),
+                dbPayment.getPbaNumber(),
+                dbPayment.getPayerName(),
+                dbPayment.getDateCreated(),
+                dbPayment.getDateUpdated(),
+                dbPayment.getBankedDate(),
+                refunds,
+                apportionments
+        );
+    }
+
+    private Refund buildRefund(RefundEntity dbRefund) {
+        return new Refund(
+                dbRefund.getReference(),
+                dbRefund.getAmount() != null ? dbRefund.getAmount().doubleValue() : null,
+                dbRefund.getReason(),
+                dbRefund.getRefundStatus(),
+                dbRefund.getRefundInstructionType(),
+                dbRefund.getDateCreated(),
+                dbRefund.getDateUpdated(),
+                dbRefund.getCreatedBy(),
+                dbRefund.getUpdatedBy()
+        );
+    }
+
+    private Apportionment buildApportionment(ApportionmentEntity dbApportion) {
+        return new Apportionment(
+                dbApportion.getId(),
+                dbApportion.getFeeId(),
+                formatAmount(dbApportion.getApportionAmount()),
+                dbApportion.getApportionType(),
+                formatAmount(dbApportion.getCallSurplusAmount()),
+                dbApportion.getDateCreated(),
+                dbApportion.getDateUpdated()
+        );
+    }
+
+    private String formatAmount(java.math.BigDecimal amount) {
+        if (amount == null) return null;
+        return amount.setScale(2, java.math.RoundingMode.HALF_UP).toString();
     }
 }

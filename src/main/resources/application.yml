@@ -1,13 +1,15 @@
 spring:
   application:
     name: db-tool-spring-boot
+  main:
+    web-application-type: none
 
   # Payment Database Configuration
   datasource:
     payment:
-      jdbc-url: jdbc:postgresql://localhost:5446/payment
-      username: payment
-      password: payment
+      url: jdbc:postgresql://localhost:5446/payments
+      username: postgres
+      password: postgres
       driver-class-name: org.postgresql.Driver
       hikari:
         maximum-pool-size: 10
@@ -16,9 +18,9 @@ spring:
 
     # Refund Database Configuration
     refunds:
-      jdbc-url: jdbc:postgresql://localhost:5447/refunds
-      username: refunds
-      password: refunds
+      url: jdbc:postgresql://localhost:5447/refunds
+      username: postgres
+      password: postgres
       driver-class-name: org.postgresql.Driver
       hikari:
         maximum-pool-size: 10
@@ -27,7 +29,7 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: validate
+      ddl-auto: none
     show-sql: false
     properties:
       hibernate:

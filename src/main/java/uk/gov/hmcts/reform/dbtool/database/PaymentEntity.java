@@ -14,38 +14,30 @@ import java.time.LocalDateTime;
  * DATABASE MODEL - payment table
  */
 @Entity
-@Table(name = "payment", schema = "payment")
+@Table(name = "payment", schema = "public")
 @Data
 @NoArgsConstructor
-public class Payment {
+public class PaymentEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @NotNull
-    @Positive
-    @Column(name = "amount", precision = 12, scale = 2)
+    @Column(name = "amount", precision = 19, scale = 2)
     private BigDecimal amount;
 
     @Column(name = "case_reference")
     private String caseReference;
 
-    @NotNull
-    @Size(max = 25)
-    @Column(name = "ccd_case_number", length = 25)
+    @Column(name = "ccd_case_number")
     private String ccdCaseNumber;
 
-    @NotNull
-    @Size(max = 3)
-    @Column(name = "currency", length = 3)
-    private String currency = "GBP";
+    @Column(name = "currency")
+    private String currency;
 
-    @NotNull
     @Column(name = "date_created")
     private LocalDateTime dateCreated;
 
-    @NotNull
     @Column(name = "date_updated")
     private LocalDateTime dateUpdated;
 
@@ -73,7 +65,6 @@ public class Payment {
     @Column(name = "payment_status")
     private String paymentStatus;
 
-    @NotNull
     @Column(name = "payment_link_id")
     private Long paymentLinkId;
 
@@ -89,9 +80,7 @@ public class Payment {
     @Column(name = "pba_number")
     private String pbaNumber;
 
-    @NotNull
-    @Size(max = 50)
-    @Column(name = "reference", length = 50)
+    @Column(name = "reference")
     private String reference;
 
     @Column(name = "giro_slip_no")

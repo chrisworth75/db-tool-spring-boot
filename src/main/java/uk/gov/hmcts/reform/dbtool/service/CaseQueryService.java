@@ -29,34 +29,24 @@ public class CaseQueryService {
     private final CaseMapper caseMapper;
 
     /**
-     * Query all data for a CCD case number
+     * Query all data for a CCD case number from both databases
      */
     @Transactional(readOnly = true)
     public List<Case> queryCaseByCcd(String ccdCaseNumber) {
         log.info("Querying case data for CCD: {}", ccdCaseNumber);
 
-        // Fetch payment_fee_links
-        List<PaymentFeeLink> links = paymentFeeLinkRepository.findByCcdCaseNumber(ccdCaseNumber);
-        if (links.isEmpty()) {
-            log.warn("No payment_fee_links found for CCD: {}", ccdCaseNumber);
-            return List.of();
-        }
+        // Fetch all data directly by CCD in parallel
+        List<PaymentFeeLinkEntity> links = paymentFeeLinkRepository.findByCcdCaseNumber(ccdCaseNumber);
+        List<FeeEntity> fees = feeRepository.findByCcdCaseNumber(ccdCaseNumber);
+        List<PaymentEntity> payments = paymentRepository.findByCcdCaseNumber(ccdCaseNumber);
+        List<RemissionEntity> remissions = remissionRepository.findByCcdCaseNumber(ccdCaseNumber);
+        List<ApportionmentEntity> apportionments = apportionmentRepository.findByCcdCaseNumber(ccdCaseNumber);
 
-        List<Long> linkIds = links.stream()
-                .map(PaymentFeeLink::getId)
-                .collect(Collectors.toList());
-
-        // Fetch all related data in parallel
-        List<Fee> fees = feeRepository.findByPaymentLinkIdIn(linkIds);
-        List<Payment> payments = paymentRepository.findByPaymentLinkIdIn(linkIds);
-        List<Remission> remissions = remissionRepository.findByCcdCaseNumber(ccdCaseNumber);
-        List<Apportionment> apportionments = apportionmentRepository.findByCcdCaseNumber(ccdCaseNumber);
-
-        // Fetch refunds
+        // Fetch refunds from refunds database
         List<String> paymentReferences = payments.stream()
-                .map(Payment::getReference)
+                .map(PaymentEntity::getReference)
                 .collect(Collectors.toList());
-        List<Refund> refunds = paymentReferences.isEmpty() ?
+        List<RefundEntity> refunds = paymentReferences.isEmpty() ?
                 List.of() : refundRepository.findByPaymentReferenceIn(paymentReferences);
 
         log.info("Found {} links, {} fees, {} payments, {} refunds, {} remissions, {} apportionments",
@@ -65,24 +55,5 @@ public class CaseQueryService {
 
         // Map to domain model
         return caseMapper.mapToDomain(links, fees, payments, refunds, remissions, apportionments);
-    }
-
-    /**
-     * Query all data for a payment reference
-     */
-    @Transactional(readOnly = true)
-    public List<Case> queryCaseByPaymentReference(String paymentReference) {
-        log.info("Querying case data for payment reference: {}", paymentReference);
-
-        // Find the payment_fee_link first
-        List<PaymentFeeLink> links = paymentFeeLinkRepository.findByPaymentReference(paymentReference);
-        if (links.isEmpty()) {
-            log.warn("No payment_fee_link found for payment reference: {}", paymentReference);
-            return List.of();
-        }
-
-        // Get the CCD from the first link and query by CCD
-        String ccdCaseNumber = links.get(0).getCcdCaseNumber();
-        return queryCaseByCcd(ccdCaseNumber);
     }
 }
