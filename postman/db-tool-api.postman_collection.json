@@ -1,0 +1,276 @@
+{
+	"info": {
+		"_postman_id": "db-tool-spring-boot-api",
+		"name": "DB Tool Spring Boot API",
+		"description": "REST API for querying payment and refund data from the DB Tool Spring Boot application.\n\n**Base URL:** http://localhost:8080\n\n**Note:** This Spring Boot implementation is the primary version. Node.js and Python versions may be behind.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:8080",
+			"type": "string"
+		},
+		{
+			"key": "ccdCaseNumber",
+			"value": "1111111111111111",
+			"type": "string"
+		}
+	],
+	"item": [
+		{
+			"name": "Cases",
+			"description": "Endpoints for querying case data",
+			"item": [
+				{
+					"name": "Get Case by CCD Number",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/cases/ccd/{{ccdCaseNumber}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"cases",
+								"ccd",
+								"{{ccdCaseNumber}}"
+							]
+						},
+						"description": "Retrieve full case data including all service requests, fees, payments, refunds, remissions, and apportionments for a given CCD case number.\n\nReturns:\n- `case`: Full case object with nested service requests\n- `summary`: Calculated totals and counts"
+					},
+					"response": [
+						{
+							"name": "Success - Single Case",
+							"originalRequest": {
+								"method": "GET",
+								"url": {
+									"raw": "{{baseUrl}}/api/cases/ccd/1111111111111111",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										"cases",
+										"ccd",
+										"1111111111111111"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"body": "{\n  \"case\": {\n    \"ccdCaseNumber\": \"1111111111111111\",\n    \"serviceRequests\": [\n      {\n        \"id\": 1,\n        \"paymentReference\": \"PAY-1111\",\n        \"ccdCaseNumber\": \"1111111111111111\",\n        \"caseReference\": \"1111-1111-1111-1111\",\n        \"fees\": [\n          {\n            \"id\": 1,\n            \"code\": \"FEE0001\",\n            \"version\": \"1\",\n            \"amount\": \"215.00\",\n            \"reference\": \"Hearing fee\",\n            \"remissions\": []\n          }\n        ],\n        \"payments\": [\n          {\n            \"id\": 1,\n            \"reference\": \"RC-1111-0001\",\n            \"amount\": \"215.00\",\n            \"currency\": \"GBP\",\n            \"status\": \"success\",\n            \"method\": \"card\",\n            \"refunds\": [],\n            \"apportionments\": [\n              {\n                \"id\": 1,\n                \"feeId\": 1,\n                \"apportionAmount\": \"215.00\",\n                \"apportionType\": \"AUTO\"\n              }\n            ]\n          }\n        ]\n      }\n    ]\n  },\n  \"summary\": {\n    \"totalFees\": 630,\n    \"totalPayments\": 630,\n    \"totalRefunds\": 0,\n    \"totalRemissions\": 0,\n    \"serviceRequestCount\": 1,\n    \"feeCount\": 3,\n    \"paymentCount\": 3,\n    \"refundCount\": 0,\n    \"remissionCount\": 0,\n    \"netAmount\": 630,\n    \"amountDue\": 0\n  }\n}"
+						},
+						{
+							"name": "Not Found",
+							"originalRequest": {
+								"method": "GET",
+								"url": {
+									"raw": "{{baseUrl}}/api/cases/ccd/9999999999999999",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										"cases",
+										"ccd",
+										"9999999999999999"
+									]
+								}
+							},
+							"status": "Not Found",
+							"code": 404,
+							"_postman_previewlanguage": "text",
+							"body": ""
+						}
+					]
+				},
+				{
+					"name": "Get Case Summary",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/cases/ccd/{{ccdCaseNumber}}/summary",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"cases",
+								"ccd",
+								"{{ccdCaseNumber}}",
+								"summary"
+							]
+						},
+						"description": "Retrieve only the summary (totals and counts) for a given CCD case number.\n\nThis is a lighter endpoint when you don't need the full case details."
+					},
+					"response": [
+						{
+							"name": "Success",
+							"originalRequest": {
+								"method": "GET",
+								"url": {
+									"raw": "{{baseUrl}}/api/cases/ccd/1111111111111111/summary",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"api",
+										"cases",
+										"ccd",
+										"1111111111111111",
+										"summary"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"body": "{\n  \"totalFees\": 630,\n  \"totalPayments\": 630,\n  \"totalRefunds\": 0,\n  \"totalRemissions\": 0,\n  \"serviceRequestCount\": 1,\n  \"feeCount\": 3,\n  \"paymentCount\": 3,\n  \"refundCount\": 0,\n  \"remissionCount\": 0,\n  \"netAmount\": 630,\n  \"amountDue\": 0\n}"
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Test Cases",
+			"description": "Pre-configured requests for test data in the database",
+			"item": [
+				{
+					"name": "Case 1111 - Full Payment",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/cases/ccd/1111111111111111",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"cases",
+								"ccd",
+								"1111111111111111"
+							]
+						},
+						"description": "Test case with 3 fees, 3 payments, fully paid (amountDue: 0)"
+					}
+				},
+				{
+					"name": "Case 2222",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/cases/ccd/2222222222222222",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"cases",
+								"ccd",
+								"2222222222222222"
+							]
+						},
+						"description": "Test case 2222"
+					}
+				},
+				{
+					"name": "Case 3333",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/cases/ccd/3333333333333333",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"cases",
+								"ccd",
+								"3333333333333333"
+							]
+						},
+						"description": "Test case 3333"
+					}
+				},
+				{
+					"name": "Case 4444",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/cases/ccd/4444444444444444",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"cases",
+								"ccd",
+								"4444444444444444"
+							]
+						},
+						"description": "Test case 4444"
+					}
+				},
+				{
+					"name": "Case 5555",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/cases/ccd/5555555555555555",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"cases",
+								"ccd",
+								"5555555555555555"
+							]
+						},
+						"description": "Test case 5555"
+					}
+				},
+				{
+					"name": "Non-existent Case",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/cases/ccd/9999999999999999",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"cases",
+								"ccd",
+								"9999999999999999"
+							]
+						},
+						"description": "Test 404 response for non-existent case"
+					}
+				}
+			]
+		}
+	]
+}
