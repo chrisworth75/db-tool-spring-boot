@@ -4,7 +4,8 @@ pipeline {
     environment {
         DOCKER_REGISTRY = 'localhost:5000'
         IMAGE_NAME = 'db-tool-spring-boot'
-        JAVA_VERSION = '17'
+        JAVA_HOME = '/opt/homebrew/Cellar/openjdk@17/17.0.12/libexec/openjdk.jdk/Contents/Home'
+        PATH = "${JAVA_HOME}/bin:${env.PATH}"
     }
 
     stages {
