@@ -7,11 +7,6 @@ pipeline {
         JAVA_VERSION = '17'
     }
 
-    tools {
-        maven 'Maven 3.8+'
-        jdk 'JDK 17'
-    }
-
     stages {
         stage('Checkout') {
             steps {
