@@ -110,7 +110,7 @@ pipeline {
                         # Create Dockerfile if it doesn't exist
                         if [ ! -f Dockerfile ]; then
                             cat > Dockerfile << 'DOCKERFILE'
-FROM eclipse-temurin:17-jre-alpine
+FROM eclipse-temurin:17-jre
 
 WORKDIR /app
 
