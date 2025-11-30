@@ -8,9 +8,9 @@ import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.*;
 
 /**
- * End-to-end tests for the Case API using RestAssured and Testcontainers.
+ * Integration tests for the Case API using RestAssured and Testcontainers.
  */
-class CaseApiE2ETest extends BaseE2ETest {
+class CaseApiIT extends BaseIT {
 
     @Nested
     @DisplayName("GET /api/cases/ccd/{ccdCaseNumber}")

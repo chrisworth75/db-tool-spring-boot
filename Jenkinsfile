@@ -33,7 +33,7 @@ pipeline {
                 script {
                     sh '''
                         echo "Running unit tests..."
-                        mvn test -Dtest=!*E2ETest -q
+                        mvn test -q
                         echo "✅ Unit tests completed!"
                     '''
                 }
@@ -53,32 +53,32 @@ pipeline {
             }
         }
 
-        stage('E2E Tests') {
+        stage('Integration Tests') {
             steps {
                 script {
                     sh '''
-                        echo "🧪 Running end-to-end tests with Testcontainers..."
+                        echo "🧪 Running integration tests with Testcontainers..."
 
                         # Check if Docker is available
                         if ! docker info >/dev/null 2>&1; then
-                            echo "⚠️  Docker is not available - skipping e2e tests"
-                            echo "ℹ️  E2E tests require Docker for Testcontainers"
+                            echo "⚠️  Docker is not available - skipping integration tests"
+                            echo "ℹ️  Integration tests require Docker for Testcontainers"
                             exit 0
                         fi
 
-                        echo "Docker is available, running E2E tests..."
-                        mvn test -Dtest=*E2ETest -q || {
-                            echo "⚠️  E2E tests completed with warnings"
+                        echo "Docker is available, running integration tests..."
+                        mvn verify -DskipUnitTests -q || {
+                            echo "⚠️  Integration tests completed with warnings"
                             exit 0
                         }
 
-                        echo "✅ E2E tests completed!"
+                        echo "✅ Integration tests completed!"
                     '''
                 }
             }
             post {
                 always {
-                    junit allowEmptyResults: true, testResults: 'target/surefire-reports/*.xml'
+                    junit allowEmptyResults: true, testResults: 'target/failsafe-reports/*.xml'
                 }
             }
         }

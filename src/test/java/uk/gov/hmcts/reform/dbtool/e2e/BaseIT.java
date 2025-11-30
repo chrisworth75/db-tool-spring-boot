@@ -11,12 +11,12 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 /**
- * Base class for end-to-end tests with Testcontainers.
+ * Base class for integration tests with Testcontainers.
  * Starts two PostgreSQL containers for payments and refunds databases.
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Testcontainers
-public abstract class BaseE2ETest {
+public abstract class BaseIT {
 
     @LocalServerPort
     private int port;
