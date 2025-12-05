@@ -159,6 +159,44 @@ DOCKERFILE
                 }
             }
         }
+
+        stage('Deploy') {
+            steps {
+                script {
+                    sh '''
+                        echo "🚀 Deploying db-tool-spring-boot..."
+
+                        # Stop and remove existing container if running
+                        if docker ps -a --format '{{.Names}}' | grep -q '^db-tool-spring-boot$'; then
+                            echo "Stopping existing container..."
+                            docker stop db-tool-spring-boot || true
+                            docker rm db-tool-spring-boot || true
+                        fi
+
+                        # Run the new container
+                        echo "Starting new container on port 3500..."
+                        docker run -d \
+                            --name db-tool-spring-boot \
+                            --network host \
+                            --restart unless-stopped \
+                            db-tool-spring-boot:latest
+
+                        # Wait for container to start
+                        sleep 5
+
+                        # Verify container is running
+                        if docker ps --format '{{.Names}}' | grep -q '^db-tool-spring-boot$'; then
+                            echo "✅ Container deployed successfully!"
+                            echo "🌐 API available at http://localhost:3500"
+                        else
+                            echo "❌ Container failed to start"
+                            docker logs db-tool-spring-boot || true
+                            exit 1
+                        fi
+                    '''
+                }
+            }
+        }
     }
 
     post {
