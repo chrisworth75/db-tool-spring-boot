@@ -1,0 +1,335 @@
+databaseChangeLog:
+  - changeSet:
+      id: 1-create-payment-fee-link
+      author: db-tool
+      changes:
+        - createTable:
+            tableName: payment_fee_link
+            columns:
+              - column:
+                  name: id
+                  type: bigint
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+              - column:
+                  name: date_created
+                  type: timestamp
+                  constraints:
+                    nullable: false
+              - column:
+                  name: date_updated
+                  type: timestamp
+                  constraints:
+                    nullable: false
+              - column:
+                  name: payment_reference
+                  type: varchar(50)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: org_id
+                  type: varchar(20)
+              - column:
+                  name: enterprise_service_name
+                  type: varchar(255)
+              - column:
+                  name: ccd_case_number
+                  type: varchar(25)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: case_reference
+                  type: varchar(25)
+              - column:
+                  name: service_request_callback_url
+                  type: varchar(255)
+
+  - changeSet:
+      id: 2-create-payment
+      author: db-tool
+      changes:
+        - createTable:
+            tableName: payment
+            columns:
+              - column:
+                  name: id
+                  type: bigint
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+              - column:
+                  name: amount
+                  type: decimal(19,2)
+              - column:
+                  name: case_reference
+                  type: varchar(255)
+              - column:
+                  name: ccd_case_number
+                  type: varchar(255)
+              - column:
+                  name: currency
+                  type: varchar(10)
+              - column:
+                  name: date_created
+                  type: timestamp
+              - column:
+                  name: date_updated
+                  type: timestamp
+              - column:
+                  name: description
+                  type: varchar(255)
+              - column:
+                  name: service_type
+                  type: varchar(255)
+              - column:
+                  name: site_id
+                  type: varchar(255)
+              - column:
+                  name: user_id
+                  type: varchar(255)
+              - column:
+                  name: payment_channel
+                  type: varchar(255)
+              - column:
+                  name: payment_method
+                  type: varchar(255)
+              - column:
+                  name: payment_provider
+                  type: varchar(255)
+              - column:
+                  name: payment_status
+                  type: varchar(255)
+              - column:
+                  name: payment_link_id
+                  type: bigint
+              - column:
+                  name: customer_reference
+                  type: varchar(255)
+              - column:
+                  name: external_reference
+                  type: varchar(255)
+              - column:
+                  name: organisation_name
+                  type: varchar(255)
+              - column:
+                  name: pba_number
+                  type: varchar(255)
+              - column:
+                  name: reference
+                  type: varchar(255)
+              - column:
+                  name: giro_slip_no
+                  type: varchar(255)
+              - column:
+                  name: s2s_service_name
+                  type: varchar(255)
+              - column:
+                  name: reported_date_offline
+                  type: timestamp
+              - column:
+                  name: service_callback_url
+                  type: varchar(255)
+              - column:
+                  name: document_control_number
+                  type: varchar(255)
+              - column:
+                  name: banked_date
+                  type: timestamp
+              - column:
+                  name: payer_name
+                  type: varchar(255)
+              - column:
+                  name: internal_reference
+                  type: varchar(255)
+
+  - changeSet:
+      id: 3-create-fee
+      author: db-tool
+      changes:
+        - createTable:
+            tableName: fee
+            columns:
+              - column:
+                  name: id
+                  type: bigint
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+              - column:
+                  name: code
+                  type: varchar(255)
+              - column:
+                  name: version
+                  type: varchar(255)
+              - column:
+                  name: payment_link_id
+                  type: bigint
+              - column:
+                  name: calculated_amount
+                  type: decimal(19,2)
+              - column:
+                  name: volume
+                  type: int
+              - column:
+                  name: ccd_case_number
+                  type: varchar(255)
+              - column:
+                  name: reference
+                  type: varchar(255)
+              - column:
+                  name: net_amount
+                  type: decimal(19,2)
+              - column:
+                  name: fee_amount
+                  type: decimal(19,2)
+              - column:
+                  name: amount_due
+                  type: decimal(19,2)
+              - column:
+                  name: date_created
+                  type: timestamp
+              - column:
+                  name: date_updated
+                  type: timestamp
+
+  - changeSet:
+      id: 4-create-remission
+      author: db-tool
+      changes:
+        - createTable:
+            tableName: remission
+            columns:
+              - column:
+                  name: id
+                  type: bigint
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+              - column:
+                  name: fee_id
+                  type: bigint
+              - column:
+                  name: hwf_reference
+                  type: varchar(255)
+              - column:
+                  name: hwf_amount
+                  type: decimal(19,2)
+              - column:
+                  name: beneficiary_name
+                  type: varchar(255)
+              - column:
+                  name: ccd_case_number
+                  type: varchar(255)
+              - column:
+                  name: case_reference
+                  type: varchar(255)
+              - column:
+                  name: payment_link_id
+                  type: bigint
+              - column:
+                  name: site_id
+                  type: varchar(255)
+              - column:
+                  name: date_created
+                  type: timestamp
+              - column:
+                  name: date_updated
+                  type: timestamp
+              - column:
+                  name: remission_reference
+                  type: varchar(255)
+
+  - changeSet:
+      id: 5-create-fee-pay-apportion
+      author: db-tool
+      changes:
+        - createTable:
+            tableName: fee_pay_apportion
+            columns:
+              - column:
+                  name: id
+                  type: bigint
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+              - column:
+                  name: payment_id
+                  type: bigint
+              - column:
+                  name: fee_id
+                  type: bigint
+              - column:
+                  name: payment_link_id
+                  type: bigint
+              - column:
+                  name: fee_amount
+                  type: decimal(19,2)
+              - column:
+                  name: payment_amount
+                  type: decimal(19,2)
+              - column:
+                  name: apportion_amount
+                  type: decimal(19,2)
+              - column:
+                  name: ccd_case_number
+                  type: varchar(255)
+              - column:
+                  name: apportion_type
+                  type: varchar(255)
+              - column:
+                  name: call_surplus_amount
+                  type: decimal(19,2)
+              - column:
+                  name: created_by
+                  type: varchar(255)
+              - column:
+                  name: date_created
+                  type: timestamp
+              - column:
+                  name: date_updated
+                  type: timestamp
+
+  - changeSet:
+      id: 6-add-indexes
+      author: db-tool
+      changes:
+        - createIndex:
+            tableName: payment
+            indexName: idx_payment_ccd_case_number
+            columns:
+              - column:
+                  name: ccd_case_number
+        - createIndex:
+            tableName: payment
+            indexName: idx_payment_payment_link_id
+            columns:
+              - column:
+                  name: payment_link_id
+        - createIndex:
+            tableName: fee
+            indexName: idx_fee_payment_link_id
+            columns:
+              - column:
+                  name: payment_link_id
+        - createIndex:
+            tableName: fee
+            indexName: idx_fee_ccd_case_number
+            columns:
+              - column:
+                  name: ccd_case_number
+        - createIndex:
+            tableName: payment_fee_link
+            indexName: idx_pfl_ccd_case_number
+            columns:
+              - column:
+                  name: ccd_case_number
+
+  - changeSet:
+      id: 7-seed-data
+      author: db-tool
+      context: "!test"
+      changes:
+        - sqlFile:
+            path: db/changelog/payments/seed-data.sql
+            relativeToChangelogFile: false

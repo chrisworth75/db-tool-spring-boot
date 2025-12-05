@@ -4,12 +4,14 @@ import java.util.List;
 
 /**
  * Request DTO for PATCH endpoint.
- * Contains only the identifiers needed to locate entities and determine what to keep/delete.
+ * Uses the same ServiceRequest/Fee/Payment DTOs as the GET response.
  * Any service requests present in the received DTO will be kept; those absent will be deleted.
+ * Fields can be null/omitted if only identifying entities for deletion.
+ * In future, non-null fields can be used to update entity values.
  */
 public record CasePatchRequest(
     String ccdCaseNumber,
-    List<ServiceRequestPatch> serviceRequests
+    List<ServiceRequest> serviceRequests
 ) {
     public CasePatchRequest {
         serviceRequests = serviceRequests == null ? List.of() : List.copyOf(serviceRequests);

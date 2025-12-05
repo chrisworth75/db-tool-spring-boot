@@ -1,0 +1,85 @@
+databaseChangeLog:
+  - changeSet:
+      id: 1-create-refunds
+      author: db-tool
+      changes:
+        - createTable:
+            tableName: refunds
+            columns:
+              - column:
+                  name: id
+                  type: bigint
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+              - column:
+                  name: date_created
+                  type: timestamp
+              - column:
+                  name: date_updated
+                  type: timestamp
+              - column:
+                  name: amount
+                  type: decimal(19,2)
+              - column:
+                  name: reason
+                  type: varchar(255)
+              - column:
+                  name: refund_status
+                  type: varchar(255)
+              - column:
+                  name: reference
+                  type: varchar(255)
+              - column:
+                  name: payment_reference
+                  type: varchar(255)
+              - column:
+                  name: created_by
+                  type: varchar(255)
+              - column:
+                  name: updated_by
+                  type: varchar(255)
+              - column:
+                  name: ccd_case_number
+                  type: varchar(255)
+              - column:
+                  name: fee_ids
+                  type: varchar(255)
+              - column:
+                  name: notification_sent_flag
+                  type: varchar(50)
+              - column:
+                  name: contact_details
+                  type: text
+              - column:
+                  name: service_type
+                  type: varchar(255)
+              - column:
+                  name: refund_instruction_type
+                  type: varchar(255)
+
+  - changeSet:
+      id: 2-add-indexes
+      author: db-tool
+      changes:
+        - createIndex:
+            tableName: refunds
+            indexName: idx_refunds_ccd_case_number
+            columns:
+              - column:
+                  name: ccd_case_number
+        - createIndex:
+            tableName: refunds
+            indexName: idx_refunds_payment_reference
+            columns:
+              - column:
+                  name: payment_reference
+
+  - changeSet:
+      id: 3-seed-data
+      author: db-tool
+      context: "!test"
+      changes:
+        - sqlFile:
+            path: db/changelog/refunds/seed-data.sql
+            relativeToChangelogFile: false

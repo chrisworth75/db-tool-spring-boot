@@ -2,6 +2,7 @@ package uk.gov.hmcts.reform.dbtool.config;
 
 import com.zaxxer.hikari.HikariDataSource;
 import jakarta.persistence.EntityManagerFactory;
+import liquibase.integration.spring.SpringLiquibase;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceProperties;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -79,5 +80,15 @@ public class PaymentDataSourceConfig {
     public PlatformTransactionManager paymentTransactionManager(
             @Qualifier("paymentEntityManagerFactory") EntityManagerFactory entityManagerFactory) {
         return new JpaTransactionManager(entityManagerFactory);
+    }
+
+    @Bean(name = "paymentLiquibase")
+    public SpringLiquibase paymentLiquibase(
+            @Qualifier("paymentDataSource") DataSource dataSource) {
+        SpringLiquibase liquibase = new SpringLiquibase();
+        liquibase.setDataSource(dataSource);
+        liquibase.setChangeLog("classpath:db/changelog/payments/db.changelog-master.yaml");
+        liquibase.setDefaultSchema("public");
+        return liquibase;
     }
 }

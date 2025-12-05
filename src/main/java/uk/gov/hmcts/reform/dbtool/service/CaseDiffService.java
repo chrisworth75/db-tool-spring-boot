@@ -66,49 +66,49 @@ public class CaseDiffService {
         Set<String> refundRefsToKeep = new HashSet<>();
         Set<Long> apportionmentIdsToKeep = new HashSet<>();
 
-        for (ServiceRequestPatch srPatch : patchRequest.serviceRequests()) {
+        for (ServiceRequest sr : patchRequest.serviceRequests()) {
             // Find the service request by ID or payment reference
             PaymentFeeLinkEntity link = null;
-            if (srPatch.id() != null) {
-                link = linkById.get(srPatch.id());
-            } else if (srPatch.paymentReference() != null) {
-                link = linkByPaymentRef.get(srPatch.paymentReference());
+            if (sr.id() != null) {
+                link = linkById.get(sr.id());
+            } else if (sr.paymentReference() != null) {
+                link = linkByPaymentRef.get(sr.paymentReference());
             }
 
             if (link != null) {
                 serviceRequestIdsToKeep.add(link.getId());
 
                 // Process fees to keep
-                for (FeePatch feePatch : srPatch.fees()) {
-                    if (feePatch.id() != null) {
-                        feeIdsToKeep.add(feePatch.id());
+                for (Fee fee : sr.fees()) {
+                    if (fee.id() != null) {
+                        feeIdsToKeep.add(fee.id());
                     }
                     // Process remissions to keep
-                    for (RemissionPatch remPatch : feePatch.remissions()) {
-                        if (remPatch.hwfReference() != null) {
-                            remissionHwfRefsToKeep.add(remPatch.hwfReference());
+                    for (Remission rem : fee.remissions()) {
+                        if (rem.hwfReference() != null) {
+                            remissionHwfRefsToKeep.add(rem.hwfReference());
                         }
                     }
                 }
 
                 // Process payments to keep
-                for (PaymentPatch payPatch : srPatch.payments()) {
-                    Long paymentId = findPaymentId(dbPayments, payPatch, link.getId());
+                for (Payment payment : sr.payments()) {
+                    Long paymentId = findPaymentId(dbPayments, payment, link.getId());
                     if (paymentId != null) {
                         paymentIdsToKeep.add(paymentId);
                     }
 
                     // Process refunds to keep
-                    for (RefundPatch refPatch : payPatch.refunds()) {
-                        if (refPatch.reference() != null) {
-                            refundRefsToKeep.add(refPatch.reference());
+                    for (Refund refund : payment.refunds()) {
+                        if (refund.reference() != null) {
+                            refundRefsToKeep.add(refund.reference());
                         }
                     }
 
                     // Process apportionments to keep
-                    for (ApportionmentPatch appPatch : payPatch.apportionments()) {
-                        if (appPatch.id() != null) {
-                            apportionmentIdsToKeep.add(appPatch.id());
+                    for (Apportionment app : payment.apportionments()) {
+                        if (app.id() != null) {
+                            apportionmentIdsToKeep.add(app.id());
                         }
                     }
                 }
@@ -185,15 +185,15 @@ public class CaseDiffService {
         return new SqlGenerationResult(paymentDbSql, refundsDbSql, summary);
     }
 
-    private Long findPaymentId(List<PaymentEntity> dbPayments, PaymentPatch payPatch, Long paymentLinkId) {
+    private Long findPaymentId(List<PaymentEntity> dbPayments, Payment payment, Long paymentLinkId) {
         // First try by ID
-        if (payPatch.id() != null) {
-            return payPatch.id();
+        if (payment.id() != null) {
+            return payment.id();
         }
         // Then try by reference within the same payment_link
-        if (payPatch.reference() != null) {
+        if (payment.reference() != null) {
             return dbPayments.stream()
-                    .filter(p -> payPatch.reference().equals(p.getReference()))
+                    .filter(p -> payment.reference().equals(p.getReference()))
                     .filter(p -> paymentLinkId.equals(p.getPaymentLinkId()))
                     .map(PaymentEntity::getId)
                     .findFirst()

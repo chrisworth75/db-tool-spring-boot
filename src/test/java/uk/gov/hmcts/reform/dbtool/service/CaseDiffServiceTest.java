@@ -56,7 +56,7 @@ class CaseDiffServiceTest {
         // Patch request keeps only the first one (by ID)
         CasePatchRequest request = new CasePatchRequest(
             ccd,
-            List.of(new ServiceRequestPatch(1L, null, List.of(), List.of()))
+            List.of(createServiceRequest(1L, null, List.of(), List.of()))
         );
 
         SqlGenerationResult result = caseDiffService.generateDeletionSql(request);
@@ -83,7 +83,7 @@ class CaseDiffServiceTest {
         // Patch request keeps only the first one (by payment reference)
         CasePatchRequest request = new CasePatchRequest(
             ccd,
-            List.of(new ServiceRequestPatch(null, "PAY-001", List.of(), List.of()))
+            List.of(createServiceRequest(null, "PAY-001", List.of(), List.of()))
         );
 
         SqlGenerationResult result = caseDiffService.generateDeletionSql(request);
@@ -97,8 +97,8 @@ class CaseDiffServiceTest {
         String ccd = "1234567890123456";
 
         PaymentFeeLinkEntity link = createLink(1L, ccd, "PAY-001");
-        FeeEntity fee1 = createFee(101L, ccd, 1L);
-        FeeEntity fee2 = createFee(102L, ccd, 1L);
+        FeeEntity fee1 = createFeeEntity(101L, ccd, 1L);
+        FeeEntity fee2 = createFeeEntity(102L, ccd, 1L);
 
         when(paymentFeeLinkRepository.findByCcdCaseNumber(ccd)).thenReturn(List.of(link));
         when(feeRepository.findByCcdCaseNumber(ccd)).thenReturn(List.of(fee1, fee2));
@@ -109,9 +109,9 @@ class CaseDiffServiceTest {
         // Keep service request but only one fee
         CasePatchRequest request = new CasePatchRequest(
             ccd,
-            List.of(new ServiceRequestPatch(
+            List.of(createServiceRequest(
                 1L, null,
-                List.of(new FeePatch(101L, List.of())),
+                List.of(createFee(101L, List.of())),
                 List.of()
             ))
         );
@@ -129,10 +129,10 @@ class CaseDiffServiceTest {
         String ccd = "1234567890123456";
 
         PaymentFeeLinkEntity link = createLink(1L, ccd, "PAY-001");
-        PaymentEntity payment1 = createPayment(201L, ccd, 1L, "RC-001");
-        PaymentEntity payment2 = createPayment(202L, ccd, 1L, "RC-002");
-        ApportionmentEntity apportion = createApportionment(301L, ccd, 202L);
-        RefundEntity refund = createRefund(401L, "RF-001", "RC-002");
+        PaymentEntity payment1 = createPaymentEntity(201L, ccd, 1L, "RC-001");
+        PaymentEntity payment2 = createPaymentEntity(202L, ccd, 1L, "RC-002");
+        ApportionmentEntity apportion = createApportionmentEntity(301L, ccd, 202L);
+        RefundEntity refund = createRefundEntity(401L, "RF-001", "RC-002");
 
         when(paymentFeeLinkRepository.findByCcdCaseNumber(ccd)).thenReturn(List.of(link));
         when(feeRepository.findByCcdCaseNumber(ccd)).thenReturn(List.of());
@@ -144,10 +144,10 @@ class CaseDiffServiceTest {
         // Keep only payment1
         CasePatchRequest request = new CasePatchRequest(
             ccd,
-            List.of(new ServiceRequestPatch(
+            List.of(createServiceRequest(
                 1L, null,
                 List.of(),
-                List.of(new PaymentPatch(201L, "RC-001", List.of(), List.of()))
+                List.of(createPayment(201L, "RC-001", List.of(), List.of()))
             ))
         );
 
@@ -177,9 +177,9 @@ class CaseDiffServiceTest {
         String ccd = "1234567890123456";
 
         PaymentFeeLinkEntity link = createLink(1L, ccd, "PAY-001");
-        FeeEntity fee = createFee(101L, ccd, 1L);
-        RemissionEntity rem1 = createRemission(501L, ccd, 101L, "HWF-001");
-        RemissionEntity rem2 = createRemission(502L, ccd, 101L, "HWF-002");
+        FeeEntity fee = createFeeEntity(101L, ccd, 1L);
+        RemissionEntity rem1 = createRemissionEntity(501L, ccd, 101L, "HWF-001");
+        RemissionEntity rem2 = createRemissionEntity(502L, ccd, 101L, "HWF-002");
 
         when(paymentFeeLinkRepository.findByCcdCaseNumber(ccd)).thenReturn(List.of(link));
         when(feeRepository.findByCcdCaseNumber(ccd)).thenReturn(List.of(fee));
@@ -190,9 +190,9 @@ class CaseDiffServiceTest {
         // Keep fee with only one remission
         CasePatchRequest request = new CasePatchRequest(
             ccd,
-            List.of(new ServiceRequestPatch(
+            List.of(createServiceRequest(
                 1L, null,
-                List.of(new FeePatch(101L, List.of(new RemissionPatch("HWF-001")))),
+                List.of(createFee(101L, List.of(createRemission("HWF-001")))),
                 List.of()
             ))
         );
@@ -209,7 +209,7 @@ class CaseDiffServiceTest {
         String ccd = "1234567890123456";
 
         PaymentFeeLinkEntity link = createLink(1L, ccd, "PAY-001");
-        FeeEntity fee = createFee(101L, ccd, 1L);
+        FeeEntity fee = createFeeEntity(101L, ccd, 1L);
 
         when(paymentFeeLinkRepository.findByCcdCaseNumber(ccd)).thenReturn(List.of(link));
         when(feeRepository.findByCcdCaseNumber(ccd)).thenReturn(List.of(fee));
@@ -220,9 +220,9 @@ class CaseDiffServiceTest {
         // Keep everything
         CasePatchRequest request = new CasePatchRequest(
             ccd,
-            List.of(new ServiceRequestPatch(
+            List.of(createServiceRequest(
                 1L, null,
-                List.of(new FeePatch(101L, List.of())),
+                List.of(createFee(101L, List.of())),
                 List.of()
             ))
         );
@@ -240,7 +240,7 @@ class CaseDiffServiceTest {
         String ccd = "1234567890123456";
 
         PaymentFeeLinkEntity link = createLink(1L, ccd, "PAY-001");
-        FeeEntity fee = createFee(101L, ccd, 1L);
+        FeeEntity fee = createFeeEntity(101L, ccd, 1L);
 
         when(paymentFeeLinkRepository.findByCcdCaseNumber(ccd)).thenReturn(List.of(link));
         when(feeRepository.findByCcdCaseNumber(ccd)).thenReturn(List.of(fee));
@@ -257,7 +257,32 @@ class CaseDiffServiceTest {
         assertEquals(1, result.summary().feesToDelete());
     }
 
-    // Helper methods to create test entities
+    // Helper methods to create domain DTOs for patch requests
+    private ServiceRequest createServiceRequest(Long id, String paymentReference, List<Fee> fees, List<Payment> payments) {
+        return new ServiceRequest(id, paymentReference, null, null, fees, payments, null, null, null, null, null);
+    }
+
+    private Fee createFee(Long id, List<Remission> remissions) {
+        return new Fee(id, null, null, null, null, null, null, null, null, remissions, null, null);
+    }
+
+    private Payment createPayment(Long id, String reference, List<Refund> refunds, List<Apportionment> apportionments) {
+        return new Payment(id, reference, null, null, null, null, null, null, null, null, null, null, null, null, null, refunds, apportionments);
+    }
+
+    private Remission createRemission(String hwfReference) {
+        return new Remission(hwfReference, null, null, null, null);
+    }
+
+    private Refund createRefund(String reference) {
+        return new Refund(reference, null, null, null, null, null, null, null, null);
+    }
+
+    private Apportionment createApportionment(Long id) {
+        return new Apportionment(id, null, null, null, null, null, null);
+    }
+
+    // Helper methods to create database entities
     private PaymentFeeLinkEntity createLink(Long id, String ccd, String paymentRef) {
         PaymentFeeLinkEntity link = new PaymentFeeLinkEntity();
         link.setId(id);
@@ -266,7 +291,7 @@ class CaseDiffServiceTest {
         return link;
     }
 
-    private FeeEntity createFee(Long id, String ccd, Long paymentLinkId) {
+    private FeeEntity createFeeEntity(Long id, String ccd, Long paymentLinkId) {
         FeeEntity fee = new FeeEntity();
         fee.setId(id);
         fee.setCcdCaseNumber(ccd);
@@ -275,7 +300,7 @@ class CaseDiffServiceTest {
         return fee;
     }
 
-    private PaymentEntity createPayment(Long id, String ccd, Long paymentLinkId, String reference) {
+    private PaymentEntity createPaymentEntity(Long id, String ccd, Long paymentLinkId, String reference) {
         PaymentEntity payment = new PaymentEntity();
         payment.setId(id);
         payment.setCcdCaseNumber(ccd);
@@ -285,7 +310,7 @@ class CaseDiffServiceTest {
         return payment;
     }
 
-    private ApportionmentEntity createApportionment(Long id, String ccd, Long paymentId) {
+    private ApportionmentEntity createApportionmentEntity(Long id, String ccd, Long paymentId) {
         ApportionmentEntity app = new ApportionmentEntity();
         app.setId(id);
         app.setCcdCaseNumber(ccd);
@@ -293,7 +318,7 @@ class CaseDiffServiceTest {
         return app;
     }
 
-    private RemissionEntity createRemission(Long id, String ccd, Long feeId, String hwfRef) {
+    private RemissionEntity createRemissionEntity(Long id, String ccd, Long feeId, String hwfRef) {
         RemissionEntity rem = new RemissionEntity();
         rem.setId(id);
         rem.setCcdCaseNumber(ccd);
@@ -302,7 +327,7 @@ class CaseDiffServiceTest {
         return rem;
     }
 
-    private RefundEntity createRefund(Long id, String reference, String paymentReference) {
+    private RefundEntity createRefundEntity(Long id, String reference, String paymentReference) {
         RefundEntity refund = new RefundEntity();
         refund.setId(id);
         refund.setReference(reference);

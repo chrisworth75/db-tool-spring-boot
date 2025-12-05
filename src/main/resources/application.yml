@@ -1,6 +1,8 @@
 spring:
   application:
     name: db-tool-spring-boot
+  liquibase:
+    enabled: false
 
   # Payment Database Configuration
   datasource:
@@ -35,7 +37,7 @@ spring:
         dialect: org.hibernate.dialect.PostgreSQLDialect
 
 server:
-  port: 8080
+  port: 3500
 
 logging:
   level:
