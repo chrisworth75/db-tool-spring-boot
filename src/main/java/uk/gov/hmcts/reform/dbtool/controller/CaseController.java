@@ -5,7 +5,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import uk.gov.hmcts.reform.dbtool.domain.Case;
+import uk.gov.hmcts.reform.dbtool.domain.CasePatchRequest;
 import uk.gov.hmcts.reform.dbtool.domain.CaseSummary;
+import uk.gov.hmcts.reform.dbtool.domain.SqlGenerationResult;
+import uk.gov.hmcts.reform.dbtool.service.CaseDiffService;
 import uk.gov.hmcts.reform.dbtool.service.CaseQueryService;
 
 import java.util.HashMap;
@@ -22,6 +25,7 @@ import java.util.Map;
 public class CaseController {
 
     private final CaseQueryService caseQueryService;
+    private final CaseDiffService caseDiffService;
 
     /**
      * GET /api/cases/ccd/{ccdCaseNumber}
@@ -73,6 +77,39 @@ public class CaseController {
                 cases.get(0).getSummary() : calculateCombinedSummary(cases);
 
         return ResponseEntity.ok(summary);
+    }
+
+    /**
+     * PATCH /api/cases/ccd/{ccdCaseNumber}
+     * Compare the provided case structure with the database and return SQL to delete
+     * entities that are missing from the patch request.
+     *
+     * The request body should contain only the entities to KEEP.
+     * Any entities present in the database but absent from the request will be marked for deletion.
+     *
+     * Returns SQL statements (not executed) that can be run later to make the changes.
+     */
+    @PatchMapping("/ccd/{ccdCaseNumber}")
+    public ResponseEntity<SqlGenerationResult> patchCase(
+            @PathVariable String ccdCaseNumber,
+            @RequestBody CasePatchRequest patchRequest) {
+
+        log.info("PATCH /api/cases/ccd/{}", ccdCaseNumber);
+
+        // Validate that the path variable matches the request body
+        if (patchRequest.ccdCaseNumber() == null || !patchRequest.ccdCaseNumber().equals(ccdCaseNumber)) {
+            log.warn("CCD case number mismatch: path={}, body={}", ccdCaseNumber, patchRequest.ccdCaseNumber());
+            return ResponseEntity.badRequest().build();
+        }
+
+        // Check if case exists
+        List<Case> existingCases = caseQueryService.queryCaseByCcd(ccdCaseNumber);
+        if (existingCases.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        SqlGenerationResult result = caseDiffService.generateDeletionSql(patchRequest);
+        return ResponseEntity.ok(result);
     }
 
     private CaseSummary calculateCombinedSummary(List<Case> cases) {

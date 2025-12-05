@@ -179,3 +179,68 @@ VALUES (5, 300.00, '1000000000000004', 'GBP', '2024-01-19 10:00:00', '2024-01-19
 
 INSERT INTO public.fee_pay_apportion (id, payment_id, fee_id, payment_link_id, fee_amount, payment_amount, apportion_amount, ccd_case_number, apportion_type, date_created, date_updated)
 VALUES (5, 5, 5, 4, 300.00, 300.00, 300.00, '1000000000000004', 'AUTO', '2024-01-19 10:00:00', '2024-01-19 10:00:00');
+
+
+-- Test Case 5: MESSY CASE with duplicate service requests (main PATCH use case)
+-- This simulates a case where the same fee/payment was accidentally created under two service requests
+INSERT INTO public.payment_fee_link (id, date_created, date_updated, payment_reference, org_id, enterprise_service_name, ccd_case_number, case_reference)
+VALUES (5, '2024-01-20 10:00:00', '2024-01-20 10:00:00', 'PAY-TEST-005', 'ORG001', 'Civil Money Claims', '1000000000000005', 'REF-005'),
+       (6, '2024-01-20 10:01:00', '2024-01-20 10:01:00', 'PAY-TEST-006', 'ORG001', 'Civil Money Claims', '1000000000000005', 'REF-005');
+
+-- First service request has the "real" fee and payment
+INSERT INTO public.fee (id, code, version, payment_link_id, calculated_amount, volume, ccd_case_number, reference, net_amount, fee_amount, amount_due, date_created, date_updated)
+VALUES (6, 'FEE0006', '1', 5, 500.00, 1, '1000000000000005', 'Issue fee', 500.00, 500.00, 0.00, '2024-01-20 10:00:00', '2024-01-20 10:00:00');
+
+INSERT INTO public.payment (id, amount, ccd_case_number, currency, date_created, date_updated, payment_channel, payment_method, payment_provider, payment_status, payment_link_id, reference)
+VALUES (6, 500.00, '1000000000000005', 'GBP', '2024-01-20 10:00:00', '2024-01-20 10:00:00', 'online', 'card', 'gov pay', 'success', 5, 'RC-TEST-0006');
+
+INSERT INTO public.fee_pay_apportion (id, payment_id, fee_id, payment_link_id, fee_amount, payment_amount, apportion_amount, ccd_case_number, apportion_type, date_created, date_updated)
+VALUES (6, 6, 6, 5, 500.00, 500.00, 500.00, '1000000000000005', 'AUTO', '2024-01-20 10:00:00', '2024-01-20 10:00:00');
+
+-- Second service request is the DUPLICATE (empty, to be deleted)
+-- No fees or payments attached - this is a needless duplicate service request
+
+
+-- Test Case 6: Case with TWO service requests where BOTH have data but one should be deleted
+INSERT INTO public.payment_fee_link (id, date_created, date_updated, payment_reference, org_id, enterprise_service_name, ccd_case_number, case_reference)
+VALUES (7, '2024-01-21 10:00:00', '2024-01-21 10:00:00', 'PAY-TEST-007', 'ORG002', 'Family Public Law', '1000000000000006', 'REF-006'),
+       (8, '2024-01-21 10:01:00', '2024-01-21 10:01:00', 'PAY-TEST-008', 'ORG002', 'Family Public Law', '1000000000000006', 'REF-006');
+
+-- First service request
+INSERT INTO public.fee (id, code, version, payment_link_id, calculated_amount, volume, ccd_case_number, reference, net_amount, fee_amount, amount_due, date_created, date_updated)
+VALUES (7, 'FEE0007', '1', 7, 250.00, 1, '1000000000000006', 'Court fee', 250.00, 250.00, 0.00, '2024-01-21 10:00:00', '2024-01-21 10:00:00');
+
+INSERT INTO public.payment (id, amount, ccd_case_number, currency, date_created, date_updated, payment_channel, payment_method, payment_provider, payment_status, payment_link_id, reference)
+VALUES (7, 250.00, '1000000000000006', 'GBP', '2024-01-21 10:00:00', '2024-01-21 10:00:00', 'online', 'card', 'gov pay', 'success', 7, 'RC-TEST-0007');
+
+INSERT INTO public.fee_pay_apportion (id, payment_id, fee_id, payment_link_id, fee_amount, payment_amount, apportion_amount, ccd_case_number, apportion_type, date_created, date_updated)
+VALUES (7, 7, 7, 7, 250.00, 250.00, 250.00, '1000000000000006', 'AUTO', '2024-01-21 10:00:00', '2024-01-21 10:00:00');
+
+-- Second service request (DUPLICATE with its own fee/payment that should be deleted)
+INSERT INTO public.fee (id, code, version, payment_link_id, calculated_amount, volume, ccd_case_number, reference, net_amount, fee_amount, amount_due, date_created, date_updated)
+VALUES (8, 'FEE0007', '1', 8, 250.00, 1, '1000000000000006', 'Court fee', 250.00, 250.00, 0.00, '2024-01-21 10:01:00', '2024-01-21 10:01:00');
+
+INSERT INTO public.payment (id, amount, ccd_case_number, currency, date_created, date_updated, payment_channel, payment_method, payment_provider, payment_status, payment_link_id, reference)
+VALUES (8, 250.00, '1000000000000006', 'GBP', '2024-01-21 10:01:00', '2024-01-21 10:01:00', 'online', 'card', 'gov pay', 'success', 8, 'RC-TEST-0008');
+
+INSERT INTO public.fee_pay_apportion (id, payment_id, fee_id, payment_link_id, fee_amount, payment_amount, apportion_amount, ccd_case_number, apportion_type, date_created, date_updated)
+VALUES (8, 8, 8, 8, 250.00, 250.00, 250.00, '1000000000000006', 'AUTO', '2024-01-21 10:01:00', '2024-01-21 10:01:00');
+
+
+-- Test Case 7: Case with multiple remissions on same fee (one to delete)
+INSERT INTO public.payment_fee_link (id, date_created, date_updated, payment_reference, org_id, enterprise_service_name, ccd_case_number, case_reference)
+VALUES (9, '2024-01-22 10:00:00', '2024-01-22 10:00:00', 'PAY-TEST-009', 'ORG001', 'Divorce', '1000000000000007', 'REF-007');
+
+INSERT INTO public.fee (id, code, version, payment_link_id, calculated_amount, volume, ccd_case_number, reference, net_amount, fee_amount, amount_due, date_created, date_updated)
+VALUES (9, 'FEE0009', '1', 9, 400.00, 1, '1000000000000007', 'Divorce fee', 300.00, 400.00, 0.00, '2024-01-22 10:00:00', '2024-01-22 10:00:00');
+
+-- Two remissions on the same fee - one is a duplicate
+INSERT INTO public.remission (id, fee_id, hwf_reference, hwf_amount, beneficiary_name, ccd_case_number, payment_link_id, date_created, date_updated)
+VALUES (2, 9, 'HWF-AAA-001', 50.00, 'Alice Brown', '1000000000000007', 9, '2024-01-22 10:00:00', '2024-01-22 10:00:00'),
+       (3, 9, 'HWF-AAA-002', 50.00, 'Alice Brown', '1000000000000007', 9, '2024-01-22 10:01:00', '2024-01-22 10:01:00');
+
+INSERT INTO public.payment (id, amount, ccd_case_number, currency, date_created, date_updated, payment_channel, payment_method, payment_provider, payment_status, payment_link_id, reference)
+VALUES (9, 300.00, '1000000000000007', 'GBP', '2024-01-22 10:00:00', '2024-01-22 10:00:00', 'online', 'card', 'gov pay', 'success', 9, 'RC-TEST-0009');
+
+INSERT INTO public.fee_pay_apportion (id, payment_id, fee_id, payment_link_id, fee_amount, payment_amount, apportion_amount, ccd_case_number, apportion_type, date_created, date_updated)
+VALUES (9, 9, 9, 9, 400.00, 300.00, 300.00, '1000000000000007', 'AUTO', '2024-01-22 10:00:00', '2024-01-22 10:00:00');
