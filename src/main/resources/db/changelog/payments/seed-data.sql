@@ -60,3 +60,48 @@ VALUES (5, 300.00, '1000000000000004', 'GBP', '2024-01-19 10:00:00', '2024-01-19
 
 INSERT INTO public.fee_pay_apportion (id, payment_id, fee_id, payment_link_id, fee_amount, payment_amount, apportion_amount, ccd_case_number, apportion_type, date_created, date_updated)
 VALUES (5, 5, 5, 4, 300.00, 300.00, 300.00, '1000000000000004', 'AUTO', '2024-01-19 10:00:00', '2024-01-19 10:00:00');
+
+
+-- Test Case 5: DUPLICATE payment_fee_links for same case - for testing MOVE operations
+-- This case (1000000000000005) has TWO payment_fee_links:
+--   - Link 5 (PAY-TEST-005-A) has fee 6, payment 6, apportionment 6, remission 2
+--   - Link 6 (PAY-TEST-005-B) has fee 7, fee 8, payment 7, apportionment 7, apportionment 8
+-- Scenario: Delete link 6, MOVE its fees and apportionments to link 5
+
+INSERT INTO public.payment_fee_link (id, date_created, date_updated, payment_reference, org_id, enterprise_service_name, ccd_case_number, case_reference)
+VALUES (5, '2024-01-20 10:00:00', '2024-01-20 10:00:00', 'PAY-TEST-005-A', 'ORG001', 'Civil Money Claims', '1000000000000005', 'REF-005'),
+       (6, '2024-01-20 10:30:00', '2024-01-20 10:30:00', 'PAY-TEST-005-B', 'ORG001', 'Civil Money Claims', '1000000000000005', 'REF-005');
+
+-- Fees on link 5 (to keep)
+INSERT INTO public.fee (id, code, version, payment_link_id, calculated_amount, volume, ccd_case_number, reference, net_amount, fee_amount, amount_due, date_created, date_updated)
+VALUES (6, 'FEE0006', '1', 5, 100.00, 1, '1000000000000005', 'Application fee', 100.00, 100.00, 0.00, '2024-01-20 10:00:00', '2024-01-20 10:00:00');
+
+-- Fees on link 6 (to move to link 5)
+INSERT INTO public.fee (id, code, version, payment_link_id, calculated_amount, volume, ccd_case_number, reference, net_amount, fee_amount, amount_due, date_created, date_updated)
+VALUES (7, 'FEE0007', '1', 6, 50.00, 1, '1000000000000005', 'Hearing fee', 50.00, 50.00, 0.00, '2024-01-20 10:30:00', '2024-01-20 10:30:00'),
+       (8, 'FEE0008', '1', 6, 75.00, 1, '1000000000000005', 'Court fee', 75.00, 75.00, 0.00, '2024-01-20 10:30:00', '2024-01-20 10:30:00');
+
+-- Remission on link 5 (to keep)
+INSERT INTO public.remission (id, fee_id, hwf_reference, hwf_amount, beneficiary_name, ccd_case_number, payment_link_id, date_created, date_updated)
+VALUES (2, 6, 'HWF-MOVE-001', 25.00, 'Test Person', '1000000000000005', 5, '2024-01-20 10:00:00', '2024-01-20 10:00:00');
+
+-- Remission on link 6 (to move to link 5)
+INSERT INTO public.remission (id, fee_id, hwf_reference, hwf_amount, beneficiary_name, ccd_case_number, payment_link_id, date_created, date_updated)
+VALUES (3, 7, 'HWF-MOVE-002', 15.00, 'Move Person', '1000000000000005', 6, '2024-01-20 10:30:00', '2024-01-20 10:30:00');
+
+-- Payment on link 5 (to keep)
+INSERT INTO public.payment (id, amount, ccd_case_number, currency, date_created, date_updated, payment_channel, payment_method, payment_provider, payment_status, payment_link_id, reference)
+VALUES (6, 75.00, '1000000000000005', 'GBP', '2024-01-20 10:00:00', '2024-01-20 10:00:00', 'online', 'card', 'gov pay', 'success', 5, 'RC-TEST-0006');
+
+-- Payment on link 6 (to move to link 5)
+INSERT INTO public.payment (id, amount, ccd_case_number, currency, date_created, date_updated, payment_channel, payment_method, payment_provider, payment_status, payment_link_id, reference)
+VALUES (7, 125.00, '1000000000000005', 'GBP', '2024-01-20 10:30:00', '2024-01-20 10:30:00', 'online', 'card', 'gov pay', 'success', 6, 'RC-TEST-0007');
+
+-- Apportionment on link 5 (to keep)
+INSERT INTO public.fee_pay_apportion (id, payment_id, fee_id, payment_link_id, fee_amount, payment_amount, apportion_amount, ccd_case_number, apportion_type, date_created, date_updated)
+VALUES (6, 6, 6, 5, 100.00, 75.00, 75.00, '1000000000000005', 'AUTO', '2024-01-20 10:00:00', '2024-01-20 10:00:00');
+
+-- Apportionments on link 6 (to move to link 5)
+INSERT INTO public.fee_pay_apportion (id, payment_id, fee_id, payment_link_id, fee_amount, payment_amount, apportion_amount, ccd_case_number, apportion_type, date_created, date_updated)
+VALUES (7, 7, 7, 6, 50.00, 50.00, 50.00, '1000000000000005', 'AUTO', '2024-01-20 10:30:00', '2024-01-20 10:30:00'),
+       (8, 7, 8, 6, 75.00, 75.00, 75.00, '1000000000000005', 'AUTO', '2024-01-20 10:30:00', '2024-01-20 10:30:00');

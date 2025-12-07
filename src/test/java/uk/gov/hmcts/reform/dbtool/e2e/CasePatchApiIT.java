@@ -106,6 +106,8 @@ class CasePatchApiIT extends BaseIT {
                 .statusCode(200)
                 .body("paymentDatabaseSql", notNullValue())
                 .body("refundsDatabaseSql", notNullValue())
+                .body("paymentDatabaseRollbackSql", notNullValue())
+                .body("refundsDatabaseRollbackSql", notNullValue())
                 .body("summary", notNullValue())
                 .body("summary.serviceRequestsToDelete", notNullValue())
                 .body("summary.feesToDelete", notNullValue())
@@ -554,6 +556,195 @@ class CasePatchApiIT extends BaseIT {
             org.junit.jupiter.api.Assertions.assertTrue(
                 paymentIdx < linkIdx,
                 "Payments should be deleted before payment_fee_link"
+            );
+        }
+    }
+
+    @Nested
+    @DisplayName("PATCH - Rollback SQL Generation")
+    class RollbackSqlGeneration {
+
+        @Test
+        @DisplayName("should generate rollback SQL when deleting entities")
+        void shouldGenerateRollbackSqlWhenDeleting() {
+            // Delete everything from Test Case 1
+            String requestBody = """
+                {
+                    "ccdCaseNumber": "1000000000000001",
+                    "serviceRequests": []
+                }
+                """;
+
+            given()
+                .contentType(ContentType.JSON)
+                .body(requestBody)
+            .when()
+                .patch("/cases/ccd/1000000000000001")
+            .then()
+                .statusCode(200)
+                // Should have rollback SQL for each deleted entity
+                .body("paymentDatabaseRollbackSql", hasItem(containsString("INSERT INTO payment_fee_link")))
+                .body("paymentDatabaseRollbackSql", hasItem(containsString("INSERT INTO fee")))
+                .body("paymentDatabaseRollbackSql", hasItem(containsString("INSERT INTO payment")))
+                .body("paymentDatabaseRollbackSql", hasItem(containsString("INSERT INTO fee_pay_apportion")));
+        }
+
+        @Test
+        @DisplayName("should return empty rollback SQL when keeping all entities")
+        void shouldReturnEmptyRollbackSqlWhenKeepingAll() {
+            String requestBody = """
+                {
+                    "ccdCaseNumber": "1000000000000001",
+                    "serviceRequests": [
+                        {
+                            "id": 1,
+                            "fees": [{"id": 1}],
+                            "payments": [{"id": 1, "apportionments": [{"id": 1}]}]
+                        }
+                    ]
+                }
+                """;
+
+            given()
+                .contentType(ContentType.JSON)
+                .body(requestBody)
+            .when()
+                .patch("/cases/ccd/1000000000000001")
+            .then()
+                .statusCode(200)
+                .body("paymentDatabaseRollbackSql", hasSize(0))
+                .body("refundsDatabaseRollbackSql", hasSize(0));
+        }
+
+        @Test
+        @DisplayName("should generate rollback SQL for refunds in separate list")
+        void shouldGenerateRollbackSqlForRefundsInSeparateList() {
+            // Test Case 4: Delete refund
+            String requestBody = """
+                {
+                    "ccdCaseNumber": "1000000000000004",
+                    "serviceRequests": [
+                        {
+                            "id": 4,
+                            "fees": [{"id": 5}],
+                            "payments": [{"id": 5, "refunds": []}]
+                        }
+                    ]
+                }
+                """;
+
+            given()
+                .contentType(ContentType.JSON)
+                .body(requestBody)
+            .when()
+                .patch("/cases/ccd/1000000000000004")
+            .then()
+                .statusCode(200)
+                .body("refundsDatabaseRollbackSql", hasSize(1))
+                .body("refundsDatabaseRollbackSql[0]", containsString("INSERT INTO refunds"))
+                // Payment DB rollback should NOT contain refunds
+                .body("paymentDatabaseRollbackSql", not(hasItem(containsString("INSERT INTO refunds"))));
+        }
+
+        @Test
+        @DisplayName("should insert parents before children in rollback order")
+        void shouldInsertParentsBeforeChildrenInRollback() {
+            // Test Case 6: Delete service request 8 with all children
+            String requestBody = """
+                {
+                    "ccdCaseNumber": "1000000000000006",
+                    "serviceRequests": [
+                        {
+                            "id": 7,
+                            "fees": [{"id": 7}],
+                            "payments": [{"id": 7}]
+                        }
+                    ]
+                }
+                """;
+
+            String[] rollbackSql = given()
+                .contentType(ContentType.JSON)
+                .body(requestBody)
+            .when()
+                .patch("/cases/ccd/1000000000000006")
+            .then()
+                .statusCode(200)
+                .extract()
+                .jsonPath()
+                .getObject("paymentDatabaseRollbackSql", String[].class);
+
+            // Find indices of each insert type
+            int linkIdx = -1;
+            int paymentIdx = -1;
+            int feeIdx = -1;
+            int apportionmentIdx = -1;
+
+            for (int i = 0; i < rollbackSql.length; i++) {
+                if (rollbackSql[i].contains("INSERT INTO payment_fee_link")) linkIdx = i;
+                if (rollbackSql[i].contains("INSERT INTO payment (")) paymentIdx = i;
+                if (rollbackSql[i].contains("INSERT INTO fee (")) feeIdx = i;
+                if (rollbackSql[i].contains("INSERT INTO fee_pay_apportion")) apportionmentIdx = i;
+            }
+
+            // Verify order: parents first, children last
+            org.junit.jupiter.api.Assertions.assertTrue(
+                linkIdx < paymentIdx,
+                "payment_fee_link should be inserted before payment"
+            );
+            org.junit.jupiter.api.Assertions.assertTrue(
+                linkIdx < feeIdx,
+                "payment_fee_link should be inserted before fee"
+            );
+            org.junit.jupiter.api.Assertions.assertTrue(
+                paymentIdx < apportionmentIdx,
+                "payment should be inserted before apportionment"
+            );
+            org.junit.jupiter.api.Assertions.assertTrue(
+                feeIdx < apportionmentIdx,
+                "fee should be inserted before apportionment"
+            );
+        }
+
+        @Test
+        @DisplayName("should include correct values in rollback INSERT statement")
+        void shouldIncludeCorrectValuesInRollback() {
+            // Delete everything from Test Case 1
+            String requestBody = """
+                {
+                    "ccdCaseNumber": "1000000000000001",
+                    "serviceRequests": []
+                }
+                """;
+
+            String[] rollbackSql = given()
+                .contentType(ContentType.JSON)
+                .body(requestBody)
+            .when()
+                .patch("/cases/ccd/1000000000000001")
+            .then()
+                .statusCode(200)
+                .extract()
+                .jsonPath()
+                .getObject("paymentDatabaseRollbackSql", String[].class);
+
+            // Find the payment_fee_link INSERT
+            String linkInsert = null;
+            for (String sql : rollbackSql) {
+                if (sql.contains("INSERT INTO payment_fee_link")) {
+                    linkInsert = sql;
+                    break;
+                }
+            }
+
+            org.junit.jupiter.api.Assertions.assertNotNull(linkInsert, "Should have payment_fee_link INSERT");
+            org.junit.jupiter.api.Assertions.assertTrue(
+                linkInsert.contains("'1000000000000001'"),
+                "Should contain CCD case number"
+            );
+            org.junit.jupiter.api.Assertions.assertTrue(
+                linkInsert.contains("'PAY-TEST-001'"),
+                "Should contain payment reference"
             );
         }
     }

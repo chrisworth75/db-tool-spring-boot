@@ -2,25 +2,13 @@
 	"info": {
 		"_postman_id": "db-tool-spring-boot-api",
 		"name": "DB Tool Spring Boot API",
-		"description": "REST API for querying payment and refund data from the DB Tool Spring Boot application.\n\n**Base URL:** http://localhost:8080\n\n**Note:** This Spring Boot implementation is the primary version. Node.js and Python versions may be behind.",
+		"description": "REST API for querying and modifying payment and refund data from the DB Tool Spring Boot application.\n\n**Base URL:** http://localhost:3500\n\n**Endpoints:**\n- GET /api/cases/ccd/{ccdCaseNumber} - Get full case data\n- GET /api/cases/ccd/{ccdCaseNumber}/summary - Get case summary only\n- PATCH /api/cases/ccd/{ccdCaseNumber} - Generate SQL for case cleanup",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
-	"variable": [
-		{
-			"key": "baseUrl",
-			"value": "http://localhost:8080",
-			"type": "string"
-		},
-		{
-			"key": "ccdCaseNumber",
-			"value": "1111111111111111",
-			"type": "string"
-		}
-	],
 	"item": [
 		{
 			"name": "Cases",
-			"description": "Endpoints for querying case data",
+			"description": "Endpoints for querying and modifying case data",
 			"item": [
 				{
 					"name": "Get Case by CCD Number",
@@ -33,10 +21,12 @@
 							}
 						],
 						"url": {
-							"raw": "{{baseUrl}}/api/cases/ccd/{{ccdCaseNumber}}",
+							"raw": "http://localhost:3500/api/cases/ccd/{{ccdCaseNumber}}",
+							"protocol": "http",
 							"host": [
-								"{{baseUrl}}"
+								"localhost"
 							],
+							"port": "3500",
 							"path": [
 								"api",
 								"cases",
@@ -46,52 +36,7 @@
 						},
 						"description": "Retrieve full case data including all service requests, fees, payments, refunds, remissions, and apportionments for a given CCD case number.\n\nReturns:\n- `case`: Full case object with nested service requests\n- `summary`: Calculated totals and counts"
 					},
-					"response": [
-						{
-							"name": "Success - Single Case",
-							"originalRequest": {
-								"method": "GET",
-								"url": {
-									"raw": "{{baseUrl}}/api/cases/ccd/1111111111111111",
-									"host": [
-										"{{baseUrl}}"
-									],
-									"path": [
-										"api",
-										"cases",
-										"ccd",
-										"1111111111111111"
-									]
-								}
-							},
-							"status": "OK",
-							"code": 200,
-							"_postman_previewlanguage": "json",
-							"body": "{\n  \"case\": {\n    \"ccdCaseNumber\": \"1111111111111111\",\n    \"serviceRequests\": [\n      {\n        \"id\": 1,\n        \"paymentReference\": \"PAY-1111\",\n        \"ccdCaseNumber\": \"1111111111111111\",\n        \"caseReference\": \"1111-1111-1111-1111\",\n        \"fees\": [\n          {\n            \"id\": 1,\n            \"code\": \"FEE0001\",\n            \"version\": \"1\",\n            \"amount\": \"215.00\",\n            \"reference\": \"Hearing fee\",\n            \"remissions\": []\n          }\n        ],\n        \"payments\": [\n          {\n            \"id\": 1,\n            \"reference\": \"RC-1111-0001\",\n            \"amount\": \"215.00\",\n            \"currency\": \"GBP\",\n            \"status\": \"success\",\n            \"method\": \"card\",\n            \"refunds\": [],\n            \"apportionments\": [\n              {\n                \"id\": 1,\n                \"feeId\": 1,\n                \"apportionAmount\": \"215.00\",\n                \"apportionType\": \"AUTO\"\n              }\n            ]\n          }\n        ]\n      }\n    ]\n  },\n  \"summary\": {\n    \"totalFees\": 630,\n    \"totalPayments\": 630,\n    \"totalRefunds\": 0,\n    \"totalRemissions\": 0,\n    \"serviceRequestCount\": 1,\n    \"feeCount\": 3,\n    \"paymentCount\": 3,\n    \"refundCount\": 0,\n    \"remissionCount\": 0,\n    \"netAmount\": 630,\n    \"amountDue\": 0\n  }\n}"
-						},
-						{
-							"name": "Not Found",
-							"originalRequest": {
-								"method": "GET",
-								"url": {
-									"raw": "{{baseUrl}}/api/cases/ccd/9999999999999999",
-									"host": [
-										"{{baseUrl}}"
-									],
-									"path": [
-										"api",
-										"cases",
-										"ccd",
-										"9999999999999999"
-									]
-								}
-							},
-							"status": "Not Found",
-							"code": 404,
-							"_postman_previewlanguage": "text",
-							"body": ""
-						}
-					]
+					"response": []
 				},
 				{
 					"name": "Get Case Summary",
@@ -104,10 +49,12 @@
 							}
 						],
 						"url": {
-							"raw": "{{baseUrl}}/api/cases/ccd/{{ccdCaseNumber}}/summary",
+							"raw": "http://localhost:3500/api/cases/ccd/{{ccdCaseNumber}}/summary",
+							"protocol": "http",
 							"host": [
-								"{{baseUrl}}"
+								"localhost"
 							],
+							"port": "3500",
 							"path": [
 								"api",
 								"cases",
@@ -118,148 +65,421 @@
 						},
 						"description": "Retrieve only the summary (totals and counts) for a given CCD case number.\n\nThis is a lighter endpoint when you don't need the full case details."
 					},
-					"response": [
-						{
-							"name": "Success",
-							"originalRequest": {
-								"method": "GET",
-								"url": {
-									"raw": "{{baseUrl}}/api/cases/ccd/1111111111111111/summary",
-									"host": [
-										"{{baseUrl}}"
-									],
-									"path": [
-										"api",
-										"cases",
-										"ccd",
-										"1111111111111111",
-										"summary"
-									]
-								}
+					"response": []
+				},
+				{
+					"name": "PATCH Case - Generate Deletion SQL",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
 							},
-							"status": "OK",
-							"code": 200,
-							"_postman_previewlanguage": "json",
-							"body": "{\n  \"totalFees\": 630,\n  \"totalPayments\": 630,\n  \"totalRefunds\": 0,\n  \"totalRemissions\": 0,\n  \"serviceRequestCount\": 1,\n  \"feeCount\": 3,\n  \"paymentCount\": 3,\n  \"refundCount\": 0,\n  \"remissionCount\": 0,\n  \"netAmount\": 630,\n  \"amountDue\": 0\n}"
-						}
-					]
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"ccdCaseNumber\": \"{{ccdCaseNumber}}\",\n    \"serviceRequests\": [\n        {\n            \"id\": 1,\n            \"paymentReference\": \"PAY-TEST-001\",\n            \"fees\": [\n                {\n                    \"id\": 1,\n                    \"remissions\": []\n                }\n            ],\n            \"payments\": [\n                {\n                    \"id\": 1,\n                    \"reference\": \"RC-TEST-0001\",\n                    \"refunds\": [],\n                    \"apportionments\": [\n                        {\n                            \"id\": 1\n                        }\n                    ]\n                }\n            ]\n        }\n    ]\n}"
+						},
+						"url": {
+							"raw": "http://localhost:3500/api/cases/ccd/{{ccdCaseNumber}}",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3500",
+							"path": [
+								"api",
+								"cases",
+								"ccd",
+								"{{ccdCaseNumber}}"
+							]
+						},
+						"description": "Generate SQL DELETE statements for case cleanup.\n\n**How it works:**\n- Send the case structure you want to KEEP\n- Entities present in the request body will be kept\n- Entities absent from the request will be marked for deletion\n- Returns SQL statements (not executed) that can be run manually\n\n**Use cases:**\n- Remove duplicate service requests (payment_fee_links)\n- Clean up orphaned fees, payments, remissions, etc.\n\n**Response:**\n- `paymentDatabaseSql`: DELETE statements for the payments database\n- `refundsDatabaseSql`: DELETE statements for the refunds database (separate)\n- `paymentDatabaseRollbackSql`: INSERT statements to undo deletions (payments database)\n- `refundsDatabaseRollbackSql`: INSERT statements to undo deletions (refunds database)\n- `summary`: Counts of entities to be deleted"
+					},
+					"response": []
 				}
 			]
 		},
 		{
-			"name": "Test Cases",
-			"description": "Pre-configured requests for test data in the database",
+			"name": "PATCH Examples",
+			"description": "Example PATCH requests for common cleanup scenarios",
 			"item": [
 				{
-					"name": "Case 1111 - Full Payment",
+					"name": "Delete Duplicate Service Request (Case 5)",
 					"request": {
-						"method": "GET",
-						"header": [],
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"ccdCaseNumber\": \"1000000000000005\",\n    \"serviceRequests\": [\n        {\n            \"id\": 5,\n            \"fees\": [\n                {\"id\": 6}\n            ],\n            \"payments\": [\n                {\"id\": 6}\n            ]\n        }\n    ]\n}"
+						},
 						"url": {
-							"raw": "{{baseUrl}}/api/cases/ccd/1111111111111111",
+							"raw": "http://localhost:3500/api/cases/ccd/1000000000000005",
+							"protocol": "http",
 							"host": [
-								"{{baseUrl}}"
+								"localhost"
 							],
+							"port": "3500",
 							"path": [
 								"api",
 								"cases",
 								"ccd",
-								"1111111111111111"
+								"1000000000000005"
 							]
 						},
-						"description": "Test case with 3 fees, 3 payments, fully paid (amountDue: 0)"
-					}
+						"description": "Test Case 5: Has two service requests (5 and 6). Service request 6 is an empty duplicate.\n\nThis request keeps service request 5 with its fee and payment, and generates SQL to delete service request 6."
+					},
+					"response": []
 				},
 				{
-					"name": "Case 2222",
+					"name": "Delete Service Request with Children (Case 6)",
 					"request": {
-						"method": "GET",
-						"header": [],
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"ccdCaseNumber\": \"1000000000000006\",\n    \"serviceRequests\": [\n        {\n            \"id\": 7,\n            \"fees\": [\n                {\"id\": 7}\n            ],\n            \"payments\": [\n                {\"id\": 7}\n            ]\n        }\n    ]\n}"
+						},
 						"url": {
-							"raw": "{{baseUrl}}/api/cases/ccd/2222222222222222",
+							"raw": "http://localhost:3500/api/cases/ccd/1000000000000006",
+							"protocol": "http",
 							"host": [
-								"{{baseUrl}}"
+								"localhost"
 							],
+							"port": "3500",
 							"path": [
 								"api",
 								"cases",
 								"ccd",
-								"2222222222222222"
+								"1000000000000006"
 							]
 						},
-						"description": "Test case 2222"
-					}
+						"description": "Test Case 6: Has two service requests (7 and 8), both with fees, payments, and apportionments. Service request 8 also has a refund in the refunds database.\n\nThis request keeps service request 7 and generates SQL to delete:\n- Service request 8\n- Fee 8\n- Payment 8  \n- Apportionment 8\n- Refund RF-TEST-0002 (in refunds database)"
+					},
+					"response": []
 				},
 				{
-					"name": "Case 3333",
+					"name": "Delete Duplicate Remission (Case 7)",
 					"request": {
-						"method": "GET",
-						"header": [],
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"ccdCaseNumber\": \"1000000000000007\",\n    \"serviceRequests\": [\n        {\n            \"id\": 9,\n            \"fees\": [\n                {\n                    \"id\": 9,\n                    \"remissions\": [\n                        {\"hwfReference\": \"HWF-AAA-001\"}\n                    ]\n                }\n            ],\n            \"payments\": [\n                {\"id\": 9}\n            ]\n        }\n    ]\n}"
+						},
 						"url": {
-							"raw": "{{baseUrl}}/api/cases/ccd/3333333333333333",
+							"raw": "http://localhost:3500/api/cases/ccd/1000000000000007",
+							"protocol": "http",
 							"host": [
-								"{{baseUrl}}"
+								"localhost"
 							],
+							"port": "3500",
 							"path": [
 								"api",
 								"cases",
 								"ccd",
-								"3333333333333333"
+								"1000000000000007"
 							]
 						},
-						"description": "Test case 3333"
-					}
+						"description": "Test Case 7: Has one fee with two remissions (HWF-AAA-001 and HWF-AAA-002).\n\nThis request keeps remission HWF-AAA-001 and generates SQL to delete remission HWF-AAA-002."
+					},
+					"response": []
 				},
 				{
-					"name": "Case 4444",
+					"name": "Delete Refund (Case 4)",
 					"request": {
-						"method": "GET",
-						"header": [],
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"ccdCaseNumber\": \"1000000000000004\",\n    \"serviceRequests\": [\n        {\n            \"id\": 4,\n            \"fees\": [\n                {\"id\": 5}\n            ],\n            \"payments\": [\n                {\n                    \"id\": 5,\n                    \"refunds\": []\n                }\n            ]\n        }\n    ]\n}"
+						},
 						"url": {
-							"raw": "{{baseUrl}}/api/cases/ccd/4444444444444444",
+							"raw": "http://localhost:3500/api/cases/ccd/1000000000000004",
+							"protocol": "http",
 							"host": [
-								"{{baseUrl}}"
+								"localhost"
 							],
+							"port": "3500",
 							"path": [
 								"api",
 								"cases",
 								"ccd",
-								"4444444444444444"
+								"1000000000000004"
 							]
 						},
-						"description": "Test case 4444"
-					}
+						"description": "Test Case 4: Has a refund (RF-TEST-0001) in the separate refunds database.\n\nThis request keeps all entities but removes the refund. The SQL will be returned in `refundsDatabaseSql` (separate from paymentDatabaseSql)."
+					},
+					"response": []
 				},
 				{
-					"name": "Case 5555",
+					"name": "Keep Everything (No Changes)",
 					"request": {
-						"method": "GET",
-						"header": [],
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"ccdCaseNumber\": \"1000000000000001\",\n    \"serviceRequests\": [\n        {\n            \"id\": 1,\n            \"fees\": [\n                {\"id\": 1}\n            ],\n            \"payments\": [\n                {\"id\": 1}\n            ]\n        }\n    ]\n}"
+						},
 						"url": {
-							"raw": "{{baseUrl}}/api/cases/ccd/5555555555555555",
+							"raw": "http://localhost:3500/api/cases/ccd/1000000000000001",
+							"protocol": "http",
 							"host": [
-								"{{baseUrl}}"
+								"localhost"
 							],
+							"port": "3500",
 							"path": [
 								"api",
 								"cases",
 								"ccd",
-								"5555555555555555"
+								"1000000000000001"
 							]
 						},
-						"description": "Test case 5555"
-					}
+						"description": "Test Case 1: Simple case with one service request, fee, and payment.\n\nThis request keeps everything - the response will have empty SQL arrays and all deletion counts will be 0."
+					},
+					"response": []
 				},
 				{
-					"name": "Non-existent Case",
+					"name": "Delete Everything (Empty Patch)",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"ccdCaseNumber\": \"1000000000000001\",\n    \"serviceRequests\": []\n}"
+						},
+						"url": {
+							"raw": "http://localhost:3500/api/cases/ccd/1000000000000001",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3500",
+							"path": [
+								"api",
+								"cases",
+								"ccd",
+								"1000000000000001"
+							]
+						},
+						"description": "Test Case 1: Sending an empty serviceRequests array will generate SQL to delete ALL entities for this case.\n\n**Warning:** This is destructive - use with caution!"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Test Cases (GET)",
+			"description": "Pre-configured GET requests for test data in the database",
+			"item": [
+				{
+					"name": "Case 1 - Simple (fully paid)",
 					"request": {
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/api/cases/ccd/9999999999999999",
+							"raw": "http://localhost:3500/api/cases/ccd/1000000000000001",
+							"protocol": "http",
 							"host": [
-								"{{baseUrl}}"
+								"localhost"
 							],
+							"port": "3500",
+							"path": [
+								"api",
+								"cases",
+								"ccd",
+								"1000000000000001"
+							]
+						},
+						"description": "Simple case with one service request, one fee (£100), one payment - fully paid (amountDue: £0)"
+					},
+					"response": []
+				},
+				{
+					"name": "Case 2 - Multiple fees/payments",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:3500/api/cases/ccd/1000000000000002",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3500",
+							"path": [
+								"api",
+								"cases",
+								"ccd",
+								"1000000000000002"
+							]
+						},
+						"description": "Case with multiple fees (£150 hearing + £75 court) and multiple payments (card + PBA). Has outstanding balance of £50."
+					},
+					"response": []
+				},
+				{
+					"name": "Case 3 - With Remission (HWF)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:3500/api/cases/ccd/1000000000000003",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3500",
+							"path": [
+								"api",
+								"cases",
+								"ccd",
+								"1000000000000003"
+							]
+						},
+						"description": "Divorce case with Help with Fees remission. £200 fee with £50 HWF remission, £150 paid."
+					},
+					"response": []
+				},
+				{
+					"name": "Case 4 - With Refund",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:3500/api/cases/ccd/1000000000000004",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3500",
+							"path": [
+								"api",
+								"cases",
+								"ccd",
+								"1000000000000004"
+							]
+						},
+						"description": "Probate case with £300 fee paid, has associated refund (£50) in refunds database."
+					},
+					"response": []
+				},
+				{
+					"name": "Case 5 - Duplicate Service Requests (empty)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:3500/api/cases/ccd/1000000000000005",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3500",
+							"path": [
+								"api",
+								"cases",
+								"ccd",
+								"1000000000000005"
+							]
+						},
+						"description": "Messy case with two service requests. Service request 5 has data (fee + payment), service request 6 is empty duplicate."
+					},
+					"response": []
+				},
+				{
+					"name": "Case 6 - Duplicate Service Requests (with data)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:3500/api/cases/ccd/1000000000000006",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3500",
+							"path": [
+								"api",
+								"cases",
+								"ccd",
+								"1000000000000006"
+							]
+						},
+						"description": "Messy case with two service requests, both containing fees, payments, and apportionments. Service request 8 also has a refund."
+					},
+					"response": []
+				},
+				{
+					"name": "Case 7 - Duplicate Remissions",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:3500/api/cases/ccd/1000000000000007",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3500",
+							"path": [
+								"api",
+								"cases",
+								"ccd",
+								"1000000000000007"
+							]
+						},
+						"description": "Case with one fee that has two remissions (HWF-AAA-001 and HWF-AAA-002) - one is a duplicate."
+					},
+					"response": []
+				},
+				{
+					"name": "Non-existent Case (404)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:3500/api/cases/ccd/9999999999999999",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "3500",
 							"path": [
 								"api",
 								"cases",
@@ -268,9 +488,17 @@
 							]
 						},
 						"description": "Test 404 response for non-existent case"
-					}
+					},
+					"response": []
 				}
 			]
+		}
+	],
+	"variable": [
+		{
+			"key": "ccdCaseNumber",
+			"value": "1000000000000001",
+			"type": "string"
 		}
 	]
 }
