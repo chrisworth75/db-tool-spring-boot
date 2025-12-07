@@ -6,6 +6,10 @@ pipeline {
         IMAGE_NAME = 'db-tool-spring-boot'
         JAVA_HOME = '/opt/homebrew/Cellar/openjdk@17/17.0.12/libexec/openjdk.jdk/Contents/Home'
         PATH = "${JAVA_HOME}/bin:${env.PATH}"
+        // Testcontainers Docker configuration for Rancher Desktop
+        DOCKER_HOST = 'unix:///Users/chris/.rd/docker.sock'
+        TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE = '/var/run/docker.sock'
+        TESTCONTAINERS_RYUK_DISABLED = 'true'
     }
 
     stages {
@@ -59,7 +63,8 @@ pipeline {
                     sh '''
                         echo "🧪 Running integration tests with Testcontainers..."
 
-                        # Check if Docker is available
+                        # Check if Docker is available via DOCKER_HOST
+                        echo "Using DOCKER_HOST: $DOCKER_HOST"
                         if ! docker info >/dev/null 2>&1; then
                             echo "⚠️  Docker is not available - skipping integration tests"
                             echo "ℹ️  Integration tests require Docker for Testcontainers"
@@ -67,11 +72,7 @@ pipeline {
                         fi
 
                         echo "Docker is available, running integration tests..."
-                        mvn verify -DskipUnitTests -q || {
-                            echo "⚠️  Integration tests completed with warnings"
-                            exit 0
-                        }
-
+                        mvn verify -DskipUnitTests -q
                         echo "✅ Integration tests completed!"
                     '''
                 }
