@@ -16,6 +16,8 @@ import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 
+import org.springframework.beans.factory.annotation.Value;
+
 import javax.sql.DataSource;
 import java.util.HashMap;
 import java.util.Map;
@@ -84,11 +86,15 @@ public class PaymentDataSourceConfig {
 
     @Bean(name = "paymentLiquibase")
     public SpringLiquibase paymentLiquibase(
-            @Qualifier("paymentDataSource") DataSource dataSource) {
+            @Qualifier("paymentDataSource") DataSource dataSource,
+            @Value("${liquibase.contexts:}") String contexts) {
         SpringLiquibase liquibase = new SpringLiquibase();
         liquibase.setDataSource(dataSource);
         liquibase.setChangeLog("classpath:db/changelog/payments/db.changelog-master.yaml");
         liquibase.setDefaultSchema("public");
+        if (contexts != null && !contexts.isEmpty()) {
+            liquibase.setContexts(contexts);
+        }
         return liquibase;
     }
 }

@@ -16,6 +16,8 @@ import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 
+import org.springframework.beans.factory.annotation.Value;
+
 import javax.sql.DataSource;
 import java.util.HashMap;
 import java.util.Map;
@@ -76,11 +78,15 @@ public class RefundDataSourceConfig {
 
     @Bean(name = "refundLiquibase")
     public SpringLiquibase refundLiquibase(
-            @Qualifier("refundDataSource") DataSource dataSource) {
+            @Qualifier("refundDataSource") DataSource dataSource,
+            @Value("${liquibase.contexts:}") String contexts) {
         SpringLiquibase liquibase = new SpringLiquibase();
         liquibase.setDataSource(dataSource);
         liquibase.setChangeLog("classpath:db/changelog/refunds/db.changelog-master.yaml");
         liquibase.setDefaultSchema("public");
+        if (contexts != null && !contexts.isEmpty()) {
+            liquibase.setContexts(contexts);
+        }
         return liquibase;
     }
 }

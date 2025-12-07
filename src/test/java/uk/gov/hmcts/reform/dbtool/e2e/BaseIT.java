@@ -25,15 +25,13 @@ public abstract class BaseIT {
     static PostgreSQLContainer<?> paymentsDb = new PostgreSQLContainer<>("postgres:15-alpine")
             .withDatabaseName("payments")
             .withUsername("postgres")
-            .withPassword("postgres")
-            .withInitScript("db/payments-init.sql");
+            .withPassword("postgres");
 
     @Container
     static PostgreSQLContainer<?> refundsDb = new PostgreSQLContainer<>("postgres:15-alpine")
             .withDatabaseName("refunds")
             .withUsername("postgres")
-            .withPassword("postgres")
-            .withInitScript("db/refunds-init.sql");
+            .withPassword("postgres");
 
     @DynamicPropertySource
     static void configureProperties(DynamicPropertyRegistry registry) {
@@ -46,6 +44,9 @@ public abstract class BaseIT {
         registry.add("spring.datasource.refunds.url", refundsDb::getJdbcUrl);
         registry.add("spring.datasource.refunds.username", refundsDb::getUsername);
         registry.add("spring.datasource.refunds.password", refundsDb::getPassword);
+
+        // Liquibase context for test data
+        registry.add("liquibase.contexts", () -> "test");
     }
 
     @BeforeEach

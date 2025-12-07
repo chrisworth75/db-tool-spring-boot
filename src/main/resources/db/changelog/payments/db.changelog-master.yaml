@@ -333,3 +333,12 @@ databaseChangeLog:
         - sqlFile:
             path: db/changelog/payments/seed-data.sql
             relativeToChangelogFile: false
+
+  - changeSet:
+      id: 8-test-seed-data
+      author: db-tool
+      context: test
+      changes:
+        - sqlFile:
+            path: db/changelog/payments/test-seed-data.sql
+            relativeToChangelogFile: false
