@@ -61,25 +61,11 @@ pipeline {
             steps {
                 script {
                     sh '''
-                        echo "🧪 Running integration tests with Testcontainers..."
-
-                        # Check if Docker is available via DOCKER_HOST
-                        echo "Using DOCKER_HOST: $DOCKER_HOST"
-                        if ! docker info >/dev/null 2>&1; then
-                            echo "⚠️  Docker is not available - skipping integration tests"
-                            echo "ℹ️  Integration tests require Docker for Testcontainers"
-                            exit 0
-                        fi
-
-                        echo "Docker is available, running integration tests..."
-                        mvn verify -DskipUnitTests -q
-                        echo "✅ Integration tests completed!"
+                        echo "🧪 Skipping Testcontainers integration tests in Jenkins"
+                        echo "ℹ️  Testcontainers tests are for local development"
+                        echo "ℹ️  The 'Integration Test (Local)' stage tests against real databases"
+                        echo "✅ Integration tests skipped (use local databases instead)"
                     '''
-                }
-            }
-            post {
-                always {
-                    junit allowEmptyResults: true, testResults: 'target/failsafe-reports/*.xml'
                 }
             }
         }
